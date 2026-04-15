@@ -1,735 +1,293 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catálogo</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
-
-:root {
-–bg: #0c0c0c;
-–card: #141414;
-–border: #242424;
-–accent: #e2ff5d;
-–text: #efefef;
-–muted: #606060;
-–hover: #1c1c1c;
-}
-
-- { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-  font-family: ‘Inter’, sans-serif;
-  background: var(–bg);
-  color: var(–text);
-  display: flex;
-  min-height: 100vh;
-  }
-
-/* ─── SIDEBAR ──────────────────────────────────────────── */
-aside {
-width: 255px;
-min-width: 255px;
-background: var(–card);
-border-right: 1px solid var(–border);
-height: 100vh;
-position: sticky;
-top: 0;
-overflow-y: auto;
-display: flex;
-flex-direction: column;
-scrollbar-width: thin;
-scrollbar-color: var(–border) transparent;
-}
-aside::-webkit-scrollbar { width: 3px; }
-aside::-webkit-scrollbar-thumb { background: var(–border); border-radius: 2px; }
-
-.sidebar-logo {
-padding: 22px 18px 16px;
-border-bottom: 1px solid var(–border);
-}
-.sidebar-logo h1 {
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 26px;
-letter-spacing: 4px;
-color: var(–accent);
-line-height: 1;
-}
-.sidebar-logo p {
-font-size: 10px;
-color: var(–muted);
-letter-spacing: 2px;
-text-transform: uppercase;
-margin-top: 4px;
-}
-
-.sidebar-search {
-padding: 10px 12px;
-border-bottom: 1px solid var(–border);
-}
-.sidebar-search input {
-width: 100%;
-background: #1a1a1a;
-border: 1px solid var(–border);
-border-radius: 6px;
-padding: 8px 10px;
-color: var(–text);
-font-size: 12px;
-outline: none;
-transition: border-color .2s;
-font-family: inherit;
-}
-.sidebar-search input:focus { border-color: var(–accent); }
-.sidebar-search input::placeholder { color: var(–muted); }
-
-.sidebar-nav { flex: 1; padding: 6px 0 20px; }
-
-.nav-btn {
-display: flex;
-align-items: center;
-gap: 9px;
-width: 100%;
-padding: 9px 16px;
-background: none;
-border: none;
-border-bottom: 1px solid #1a1a1a;
-color: var(–muted);
-font-family: inherit;
-font-size: 11.5px;
-cursor: pointer;
-text-align: left;
-transition: background .12s, color .12s;
-}
-.nav-btn.live { color: var(–text); }
-.nav-btn:hover, .nav-btn.active { background: var(–hover); color: var(–accent); }
-.nav-btn .badge {
-margin-left: auto;
-background: var(–accent);
-color: #000;
-font-size: 9px;
-font-weight: 700;
-padding: 2px 6px;
-border-radius: 4px;
-flex-shrink: 0;
-}
-
-/* ─── MAIN ──────────────────────────────────────────────── */
-main { flex: 1; display: flex; flex-direction: column; }
-
-.topbar {
-background: var(–card);
-border-bottom: 1px solid var(–border);
-padding: 15px 28px;
-display: flex;
-align-items: center;
-justify-content: space-between;
-position: sticky;
-top: 0;
-z-index: 10;
-}
-.topbar h2 {
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 20px;
-letter-spacing: 2px;
-}
-.topbar span { font-size: 11px; color: var(–muted); letter-spacing: 1px; }
-
-.page-content { flex: 1; padding: 28px; }
-
-/* hero */
-.hero {
-background: linear-gradient(135deg, #141414 0%, #1a1a1a 55%, #111 100%);
-border: 1px solid var(–border);
-border-radius: 12px;
-padding: 48px 44px;
-margin-bottom: 32px;
-position: relative;
-overflow: hidden;
-}
-.hero::before {
-content: ‘’;
-position: absolute;
-top: -30%; right: -5%;
-width: 320px; height: 320px;
-background: radial-gradient(circle, rgba(226,255,93,.08) 0%, transparent 70%);
-pointer-events: none;
-}
-.hero h2 {
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 54px;
-letter-spacing: 5px;
-line-height: 1;
-margin-bottom: 12px;
-}
-.hero h2 span { color: var(–accent); }
-.hero p { font-size: 13px; color: var(–muted); line-height: 1.8; max-width: 400px; }
-.hero-nums { display: flex; gap: 32px; margin-top: 24px; }
-.hero-nums .n { font-family: ‘Bebas Neue’, sans-serif; font-size: 34px; color: var(–accent); line-height: 1; }
-.hero-nums .l { font-size: 10px; color: var(–muted); text-transform: uppercase; letter-spacing: 2px; margin-top: 3px; }
-
-/* section label */
-.sec { font-family: ‘Bebas Neue’, sans-serif; font-size: 12px; letter-spacing: 3px; color: var(–muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(–border); }
-
-/* category cards on homepage */
-.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 10px; }
-.cat-card {
-background: var(–card);
-border: 1px solid var(–border);
-border-radius: 10px;
-padding: 16px 14px;
-cursor: pointer;
-text-align: center;
-transition: background .15s, border-color .15s, transform .15s;
-}
-.cat-card.live { border-color: #2a2a2a; }
-.cat-card:hover { background: var(–hover); border-color: #383838; transform: translateY(-2px); }
-.cat-card .icon { font-size: 26px; margin-bottom: 8px; }
-.cat-card .name { font-size: 11.5px; font-weight: 600; line-height: 1.3; }
-.cat-card .info { font-size: 10px; color: var(–muted); margin-top: 4px; }
-.cat-card .pill {
-display: inline-block;
-margin-top: 6px;
-background: rgba(226,255,93,.12);
-color: var(–accent);
-border: 1px solid rgba(226,255,93,.25);
-font-size: 9px;
-font-weight: 700;
-letter-spacing: .8px;
-padding: 2px 7px;
-border-radius: 4px;
-}
-
-/* product grid */
-.prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(192px, 1fr)); gap: 14px; }
-.prod-card {
-background: var(–card);
-border: 1px solid var(–border);
-border-radius: 10px;
-overflow: hidden;
-cursor: pointer;
-transition: transform .15s, border-color .15s, box-shadow .15s;
-}
-.prod-card:hover { transform: translateY(-3px); border-color: #3a3a3a; box-shadow: 0 10px 32px rgba(0,0,0,.6); }
-.prod-card img {
-width: 100%;
-aspect-ratio: 1 / 1;
-object-fit: cover;
-display: block;
-background: #1a1a1a;
-}
-.prod-card .prod-info { padding: 10px 12px 13px; }
-.prod-card .prod-title {
-font-size: 12px;
-font-weight: 500;
-line-height: 1.45;
-overflow: hidden;
-display: -webkit-box;
--webkit-line-clamp: 2;
--webkit-box-orient: vertical;
-}
-.prod-card .prod-cat { font-size: 10px; color: var(–muted); margin-top: 3px; }
-.prod-card .prod-photos { font-size: 10px; color: var(–accent); font-weight: 600; margin-top: 4px; }
-
-/* empty */
-.empty { text-align: center; padding: 64px 20px; color: var(–muted); }
-.empty .e-icon { font-size: 44px; margin-bottom: 14px; }
-.empty p { font-size: 13px; line-height: 1.8; }
-
-/* ─── LIGHTBOX ──────────────────────────────────────────── */
-#lightbox {
-display: none;
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,.97);
-z-index: 9999;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-}
-#lightbox.open { display: flex; }
-
-#lb-close {
-position: absolute;
-top: 16px; right: 20px;
-background: rgba(255,255,255,.1);
-border: none; color: #fff;
-font-size: 18px;
-width: 38px; height: 38px;
-border-radius: 50%;
-cursor: pointer;
-display: flex; align-items: center; justify-content: center;
-transition: background .15s;
-}
-#lb-close:hover { background: rgba(255,255,255,.2); }
-
-#lb-counter {
-position: absolute;
-top: 20px; left: 20px;
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 17px;
-letter-spacing: 2px;
-color: var(–accent);
-}
-
-.lb-wrap {
-display: flex;
-align-items: center;
-gap: 8px;
-max-width: 92vw;
-max-height: 78vh;
-}
-#lb-img {
-max-width: calc(92vw - 100px);
-max-height: 78vh;
-object-fit: contain;
-border-radius: 8px;
-display: block;
-transition: opacity .18s;
-}
-.lb-arrow {
-background: rgba(255,255,255,.08);
-border: none; color: #fff;
-font-size: 24px;
-width: 44px; height: 44px;
-border-radius: 50%;
-cursor: pointer;
-display: flex; align-items: center; justify-content: center;
-flex-shrink: 0;
-transition: background .15s;
-}
-.lb-arrow:hover { background: rgba(255,255,255,.2); }
-.lb-arrow:disabled { opacity: .15; cursor: default; }
-
-#lb-title {
-position: absolute;
-bottom: 56px; left: 50%; transform: translateX(-50%);
-color: #bbb; font-size: 11px; letter-spacing: .8px;
-background: rgba(0,0,0,.7);
-padding: 5px 16px; border-radius: 20px;
-white-space: nowrap; max-width: 88vw;
-overflow: hidden; text-overflow: ellipsis;
-}
-
-#lb-thumbs {
-position: absolute;
-bottom: 10px; left: 50%; transform: translateX(-50%);
-display: flex; gap: 5px;
-max-width: 90vw; overflow-x: auto;
-padding: 3px; scrollbar-width: none;
-}
-#lb-thumbs::-webkit-scrollbar { display: none; }
-#lb-thumbs img {
-width: 44px; height: 44px;
-object-fit: cover; border-radius: 4px;
-cursor: pointer; opacity: .4;
-transition: opacity .15s;
-flex-shrink: 0;
-border: 1px solid transparent;
-}
-#lb-thumbs img.on { opacity: 1; border-color: var(–accent); }
-
-/* mobile */
-#mob-btn {
-display: none;
-position: fixed; bottom: 18px; right: 18px;
-width: 48px; height: 48px;
-background: var(–accent); color: #000;
-border: none; border-radius: 50%;
-font-size: 20px; cursor: pointer;
-z-index: 999;
-box-shadow: 0 4px 20px rgba(226,255,93,.3);
-align-items: center; justify-content: center;
-}
-@media (max-width: 768px) {
-aside { position: fixed; left: -255px; top: 0; z-index: 50; transition: left .28s; }
-aside.open { left: 0; }
-#mob-btn { display: flex; }
-.page-content { padding: 16px; }
-.hero { padding: 28px 20px; }
-.hero h2 { font-size: 38px; }
-.topbar { padding: 12px 16px; }
-#lb-img { max-width: calc(92vw - 72px); max-height: 72vh; }
-}
-
-footer { padding: 18px 28px; border-top: 1px solid var(–border); display: flex; justify-content: space-between; }
-footer p { font-size: 10px; color: var(–muted); letter-spacing: 1px; }
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
+:root{--bg:#0c0c0c;--card:#141414;--bd:#242424;--acc:#e2ff5d;--txt:#efefef;--mut:#606060;--hv:#1c1c1c}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);display:flex;min-height:100vh}
+aside{width:252px;min-width:252px;background:var(--card);border-right:1px solid var(--bd);height:100vh;position:sticky;top:0;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:var(--bd) transparent}
+aside::-webkit-scrollbar{width:3px}
+aside::-webkit-scrollbar-thumb{background:var(--bd)}
+.logo{padding:20px 16px 14px;border-bottom:1px solid var(--bd)}
+.logo h1{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--acc);line-height:1}
+.logo p{font-size:10px;color:var(--mut);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.srch{padding:10px 12px;border-bottom:1px solid var(--bd)}
+.srch input{width:100%;background:#1a1a1a;border:1px solid var(--bd);border-radius:6px;padding:8px 10px;color:var(--txt);font-size:12px;outline:none;transition:border-color .2s;font-family:inherit}
+.srch input:focus{border-color:var(--acc)}
+.srch input::placeholder{color:var(--mut)}
+nav{flex:1;padding:6px 0 20px}
+.nb{display:flex;align-items:center;gap:9px;width:100%;padding:9px 16px;background:none;border:none;border-bottom:1px solid #1a1a1a;color:var(--mut);font-family:inherit;font-size:11.5px;cursor:pointer;text-align:left;transition:background .12s,color .12s}
+.nb.live{color:var(--txt)}
+.nb:hover,.nb.active{background:var(--hv);color:var(--acc)}
+.nb .badge{margin-left:auto;background:var(--acc);color:#000;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+main{flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--card);border-bottom:1px solid var(--bd);padding:15px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.topbar h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px}
+.topbar span{font-size:11px;color:var(--mut);letter-spacing:1px}
+.pc{flex:1;padding:28px}
+.hero{background:linear-gradient(135deg,#141414,#1a1a1a 55%,#111);border:1px solid var(--bd);border-radius:12px;padding:48px 44px;margin-bottom:32px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-30%;right:-5%;width:320px;height:320px;background:radial-gradient(circle,rgba(226,255,93,.08),transparent 70%);pointer-events:none}
+.hero h2{font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:5px;line-height:1;margin-bottom:12px}
+.hero h2 span{color:var(--acc)}
+.hero p{font-size:13px;color:var(--mut);line-height:1.8;max-width:400px}
+.hero-n{display:flex;gap:32px;margin-top:24px}
+.hero-n .n{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--acc);line-height:1}
+.hero-n .l{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:2px;margin-top:3px}
+.sec{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:3px;color:var(--mut);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--bd)}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px}
+.cc{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px 14px;cursor:pointer;text-align:center;transition:background .15s,border-color .15s,transform .15s}
+.cc.live{border-color:#2a2a2a}
+.cc:hover{background:var(--hv);border-color:#383838;transform:translateY(-2px)}
+.cc .ic{font-size:26px;margin-bottom:8px}
+.cc .nm{font-size:11.5px;font-weight:600;line-height:1.3}
+.cc .inf{font-size:10px;color:var(--mut);margin-top:4px}
+.cc .pill{display:inline-block;margin-top:6px;background:rgba(226,255,93,.12);color:var(--acc);border:1px solid rgba(226,255,93,.25);font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 7px;border-radius:4px}
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(192px,1fr));gap:14px}
+.pd{background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+.pd:hover{transform:translateY(-3px);border-color:#3a3a3a;box-shadow:0 10px 32px rgba(0,0,0,.6)}
+.pd img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#1a1a1a}
+.pd .pi{padding:10px 12px 13px}
+.pd .pt{font-size:12px;font-weight:500;line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pd .ps{font-size:10px;color:var(--mut);margin-top:3px}
+.pd .pp{font-size:10px;color:var(--acc);font-weight:600;margin-top:4px}
+.empty{text-align:center;padding:64px 20px;color:var(--mut)}
+.empty .ei{font-size:44px;margin-bottom:14px}
+.empty p{font-size:13px;line-height:1.8}
+#lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center}
+#lb.open{display:flex}
+#lbx{position:absolute;top:16px;right:20px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+#lbx:hover{background:rgba(255,255,255,.2)}
+#lbn{position:absolute;top:20px;left:20px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--acc)}
+.lbw{display:flex;align-items:center;gap:8px;max-width:92vw;max-height:78vh}
+#lbi{max-width:calc(92vw - 100px);max-height:78vh;object-fit:contain;border-radius:8px;display:block;transition:opacity .18s}
+.la{background:rgba(255,255,255,.08);border:none;color:#fff;font-size:24px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.la:hover{background:rgba(255,255,255,.2)}
+.la:disabled{opacity:.15;cursor:default}
+#lbt{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);color:#bbb;font-size:11px;letter-spacing:.8px;background:rgba(0,0,0,.7);padding:5px 16px;border-radius:20px;white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis}
+#lbs{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;max-width:90vw;overflow-x:auto;padding:3px;scrollbar-width:none}
+#lbs::-webkit-scrollbar{display:none}
+#lbs img{width:44px;height:44px;object-fit:cover;border-radius:4px;cursor:pointer;opacity:.4;transition:opacity .15s;flex-shrink:0;border:1px solid transparent}
+#lbs img.on{opacity:1;border-color:var(--acc)}
+#mob{display:none;position:fixed;bottom:18px;right:18px;width:48px;height:48px;background:var(--acc);color:#000;border:none;border-radius:50%;font-size:20px;cursor:pointer;z-index:999;box-shadow:0 4px 20px rgba(226,255,93,.3);align-items:center;justify-content:center}
+@media(max-width:768px){aside{position:fixed;left:-252px;top:0;z-index:50;transition:left .28s}aside.open{left:0}#mob{display:flex}.pc{padding:16px}.hero{padding:28px 20px}.hero h2{font-size:38px}.topbar{padding:12px 16px}#lbi{max-width:calc(92vw - 72px);max-height:72vh}}
+footer{padding:18px 28px;border-top:1px solid var(--bd);display:flex;justify-content:space-between}
+footer p{font-size:10px;color:var(--mut);letter-spacing:1px}
 </style>
-
 </head>
 <body>
-
-<!-- SIDEBAR -->
-
-<aside id="sidebar">
-  <div class="sidebar-logo">
-    <h1>CATÁLOGO</h1>
-    <p>Produtos Premium</p>
-  </div>
-  <div class="sidebar-search">
-    <input id="search-inp" type="text" placeholder="🔍  Buscar categoria..." autocomplete="off">
-  </div>
-  <nav class="sidebar-nav" id="sidebar-nav"></nav>
+<aside id="sb">
+  <div class="logo"><h1>CATÁLOGO</h1><p>Produtos Premium</p></div>
+  <div class="srch"><input id="si" type="text" placeholder="🔍  Buscar..." autocomplete="off"></div>
+  <nav id="nav"></nav>
 </aside>
-
-<!-- MAIN -->
-
 <main>
-  <div class="topbar">
-    <h2 id="page-title">CATÁLOGO</h2>
-    <span id="page-sub"></span>
-  </div>
-  <div class="page-content" id="page-content"></div>
-  <footer>
-    <p>CATÁLOGO DE PRODUTOS</p>
-    <p id="footer-yr"></p>
-  </footer>
+  <div class="topbar"><h2 id="ttl">CATÁLOGO</h2><span id="tsub"></span></div>
+  <div class="pc" id="pc"></div>
+  <footer><p>CATÁLOGO DE PRODUTOS</p><p id="yr"></p></footer>
 </main>
-
-<!-- LIGHTBOX -->
-
-<div id="lightbox">
-  <button id="lb-close">✕</button>
-  <div id="lb-counter"></div>
-  <div class="lb-wrap">
-    <button class="lb-arrow" id="lb-prev">&#8249;</button>
-    <img id="lb-img" src="" alt="">
-    <button class="lb-arrow" id="lb-next">&#8250;</button>
+<div id="lb">
+  <button id="lbx">✕</button>
+  <div id="lbn"></div>
+  <div class="lbw">
+    <button class="la" id="lbp">&#8249;</button>
+    <img id="lbi" src="" alt="">
+    <button class="la" id="lbnx">&#8250;</button>
   </div>
-  <div id="lb-thumbs"></div>
-  <div id="lb-title"></div>
+  <div id="lbs"></div>
+  <div id="lbt"></div>
 </div>
-
-<button id="mob-btn">☰</button>
-
+<button id="mob">☰</button>
 <script>
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// PROXY DE IMAGEM — resolve o bloqueio de hotlink do CDN
-// wsrv.nl é um serviço gratuito que busca a imagem no servidor
-// e a entrega sem restrição de origem
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function imgUrl(hash, size) {
-  size = size || 'medium';
-  // URL original: photo.yupoo.com/ovosneaker/HASH/medium.jpg
-  // Via proxy:    wsrv.nl/?url=photo.yupoo.com/ovosneaker/HASH/medium.jpg
-  var raw = 'photo.yupoo.com/ovosneaker/' + hash + '/' + size + '.jpg';
-  return 'https://wsrv.nl/?url=' + raw + '&n=-1';
+document.getElementById('yr').textContent=new Date().getFullYear();
+
+// Imagens hospedadas no próprio GitHub após action de download
+function img(hash,size){
+  return './images/'+hash+'_'+(size||'medium')+'.jpg';
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// DADOS DOS PRODUTOS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-var PRODUCTS = [
-  // ── CAMISAS DE FUTEBOL
-  { cat:'Camisas de Futebol', title:'Brasil Away 26-27',
-    cover:'7adc3abc', photos:['ff556cf6','2f769aec','612d718d','12c6a2eb','ae36bc10','b647cbb7','1db3efe6','43e975ce','64280afb','2eee7dce'] },
-  { cat:'Camisas de Futebol', title:'Brasil Home 26-27',
-    cover:'80b03c2d', photos:['80b03c2d'] },
-
-  // ── NEW VT DUNK LOW
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Black Collab HQ8487-001',
-    cover:'1a4b93c0', photos:['1a4b93c0','377bd82e','ac440b2b','bcde912f','0169cbb7','7e26b939','76d47bf0','1581d33d','6fb94aae'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Black Yellow HQ8487-300',
-    cover:'ae1d3d69', photos:['ae1d3d69'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Purple Europe HQ8487-500',
-    cover:'41ca755b', photos:['41ca755b'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Blue Black HQ8487-400',
-    cover:'0e01cd7c', photos:['0e01cd7c'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — White Black Purple HJ0513',
-    cover:'8ef9246c', photos:['8ef9246c'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — White Blue Black HF3063-400',
-    cover:'b5baecb1', photos:['b5baecb1'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Brown Blue HF3063-002',
-    cover:'c293c2e7', photos:['c293c2e7'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — White Black HF3704-100',
-    cover:'aba31cad', photos:['aba31cad'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — White Green Black HJ4132',
-    cover:'b40a0177', photos:['b40a0177'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Black Warrior FJ1674-001',
-    cover:'6cdd05ad', photos:['6cdd05ad'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Blue FJ1674-401',
-    cover:'2a138a86', photos:['2a138a86'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Yellow White FJ1674-700',
-    cover:'7ceb383c', photos:['7ceb383c'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — White Coffee HF5441-111',
-    cover:'c74c473c', photos:['c74c473c'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Blue Gray White IB3079-400',
-    cover:'a0fc91eb', photos:['a0fc91eb'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Beige Blue Yellow HJ9112',
-    cover:'6e4475fb', photos:['6e4475fb'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — White Brown HJ7673-001',
-    cover:'6a4d0cc8', photos:['6a4d0cc8'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Gray Blue HF5441-001',
-    cover:'6ad6fda4', photos:['6ad6fda4'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Gray Black IB3079-101',
-    cover:'a2c255e7', photos:['a2c255e7'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Blue IB6399-400',
-    cover:'f1cbac9a', photos:['f1cbac9a'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Beige Gray IH0639-011',
-    cover:'dbb07b4a', photos:['dbb07b4a'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Desert Khaki HJ0367-200',
-    cover:'62638a08', photos:['62638a08'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Brown Yellow FZ1278-200',
-    cover:'e318bacb', photos:['e318bacb'] },
-  { cat:'NEW VT Dunk Low', title:'VT Dunk — Ivory White HJ0367-100',
-    cover:'14cce61b', photos:['14cce61b'] },
-
-  // ── ALEXANDER McQUEEN
-  { cat:'Alexander McQueen', title:'X1 McQueen — White Brown Heel',    cover:'b0d32148', photos:['b0d32148'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — White Black Heel',    cover:'f474740a', photos:['f474740a'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Pure White',          cover:'a3d6cd8d', photos:['a3d6cd8d'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — White Pink Heel',     cover:'a5dc3a52', photos:['a5dc3a52'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Black White',         cover:'431cd650', photos:['431cd650'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — White Blue Heel',     cover:'551f0a0c', photos:['551f0a0c'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Black Leather Heel',  cover:'e123dfab', photos:['e123dfab'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Black Velvet Heel',   cover:'73026055', photos:['73026055'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Black Drop Glue',     cover:'52c61632', photos:['52c61632'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — White Drop Glue',     cover:'a5d755d6', photos:['a5d755d6'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — All White Gold Text', cover:'f232463f', photos:['f232463f'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Black Crystal',       cover:'d8418da3', photos:['d8418da3'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Gradient Black',      cover:'0e50d44f', photos:['0e50d44f'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Laser Holographic',   cover:'5cc36afa', photos:['5cc36afa'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Mint Green',          cover:'5bfc3ec0', photos:['5bfc3ec0'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Sky Blue',            cover:'2203d452', photos:['2203d452'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Black Croc Leather',  cover:'15b6033f', photos:['15b6033f'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — All Black',           cover:'92fd7909', photos:['92fd7909'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Gray Leather Heel',   cover:'93b18ece', photos:['93b18ece'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — 3M Reflective',       cover:'0bfbe86a', photos:['0bfbe86a'] },
-  { cat:'Alexander McQueen', title:'X1 McQueen — Gray Velvet Heel',    cover:'319b9bd6', photos:['319b9bd6'] }
+var PRODS=[
+  {cat:'Camisas de Futebol',title:'Brasil Away 26-27',cover:'7adc3abc',
+   photos:['ff556cf6','2f769aec','612d718d','12c6a2eb','ae36bc10','b647cbb7','1db3efe6','43e975ce','64280afb','2eee7dce']},
+  {cat:'Camisas de Futebol',title:'Brasil Home 26-27',cover:'80b03c2d',photos:['80b03c2d']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Black Collab HQ8487-001',cover:'1a4b93c0',
+   photos:['1a4b93c0','377bd82e','ac440b2b','bcde912f','0169cbb7','7e26b939','76d47bf0','1581d33d','6fb94aae']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Black Yellow HQ8487-300',cover:'ae1d3d69',photos:['ae1d3d69']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Purple Europe HQ8487-500',cover:'41ca755b',photos:['41ca755b']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Blue Black HQ8487-400',cover:'0e01cd7c',photos:['0e01cd7c']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — White Black Purple HJ0513',cover:'8ef9246c',photos:['8ef9246c']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — White Blue Black HF3063-400',cover:'b5baecb1',photos:['b5baecb1']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Brown Blue HF3063-002',cover:'c293c2e7',photos:['c293c2e7']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — White Black HF3704-100',cover:'aba31cad',photos:['aba31cad']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — White Green Black HJ4132',cover:'b40a0177',photos:['b40a0177']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Black Warrior FJ1674-001',cover:'6cdd05ad',photos:['6cdd05ad']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Blue FJ1674-401',cover:'2a138a86',photos:['2a138a86']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Yellow White FJ1674-700',cover:'7ceb383c',photos:['7ceb383c']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — White Coffee HF5441-111',cover:'c74c473c',photos:['c74c473c']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Blue Gray White IB3079-400',cover:'a0fc91eb',photos:['a0fc91eb']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Beige Blue Yellow HJ9112',cover:'6e4475fb',photos:['6e4475fb']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — White Brown HJ7673-001',cover:'6a4d0cc8',photos:['6a4d0cc8']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Gray Blue HF5441-001',cover:'6ad6fda4',photos:['6ad6fda4']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Gray Black IB3079-101',cover:'a2c255e7',photos:['a2c255e7']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Blue IB6399-400',cover:'f1cbac9a',photos:['f1cbac9a']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Beige Gray IH0639-011',cover:'dbb07b4a',photos:['dbb07b4a']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Desert Khaki HJ0367-200',cover:'62638a08',photos:['62638a08']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Brown Yellow FZ1278-200',cover:'e318bacb',photos:['e318bacb']},
+  {cat:'NEW VT Dunk Low',title:'VT Dunk — Ivory White HJ0367-100',cover:'14cce61b',photos:['14cce61b']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — White Brown Heel',cover:'b0d32148',photos:['b0d32148']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — White Black Heel',cover:'f474740a',photos:['f474740a']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Pure White',cover:'a3d6cd8d',photos:['a3d6cd8d']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — White Pink Heel',cover:'a5dc3a52',photos:['a5dc3a52']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Black White',cover:'431cd650',photos:['431cd650']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — White Blue Heel',cover:'551f0a0c',photos:['551f0a0c']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Black Leather Heel',cover:'e123dfab',photos:['e123dfab']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Black Velvet Heel',cover:'73026055',photos:['73026055']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Black Drop Glue',cover:'52c61632',photos:['52c61632']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — White Drop Glue',cover:'a5d755d6',photos:['a5d755d6']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — All White Gold Text',cover:'f232463f',photos:['f232463f']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Black Crystal',cover:'d8418da3',photos:['d8418da3']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Gradient Black',cover:'0e50d44f',photos:['0e50d44f']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Laser Holographic',cover:'5cc36afa',photos:['5cc36afa']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Mint Green',cover:'5bfc3ec0',photos:['5bfc3ec0']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Sky Blue',cover:'2203d452',photos:['2203d452']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Black Croc Leather',cover:'15b6033f',photos:['15b6033f']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — All Black',cover:'92fd7909',photos:['92fd7909']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Gray Leather Heel',cover:'93b18ece',photos:['93b18ece']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — 3M Reflective',cover:'0bfbe86a',photos:['0bfbe86a']},
+  {cat:'Alexander McQueen',title:'X1 McQueen — Gray Velvet Heel',cover:'319b9bd6',photos:['319b9bd6']}
 ];
 
-var CATS = [
-  { name:'Camisas de Futebol', icon:'⚽', live:true  },
-  { name:'NEW VT Dunk Low',    icon:'🔥', live:true  },
-  { name:'Alexander McQueen',  icon:'💎', live:true  },
-  { name:'Dunk',               icon:'👟', live:false },
-  { name:'AJ1',                icon:'🏀', live:false },
-  { name:'AJ3',                icon:'🏀', live:false },
-  { name:'AJ4',                icon:'🏀', live:false },
-  { name:'AJ5',                icon:'🏀', live:false },
-  { name:'AJ6',                icon:'🏀', live:false },
-  { name:'Air Max',            icon:'💨', live:false },
-  { name:'Air More Uptempo',   icon:'💨', live:false },
-  { name:'AF1',                icon:'✔', live:false  },
-  { name:'Nike',               icon:'✔', live:false  },
-  { name:'NK Zoom',            icon:'🏃', live:false },
-  { name:'Kobe',               icon:'🐍', live:false },
-  { name:'Adidas',             icon:'🔱', live:false },
-  { name:'Adidas Adizero',     icon:'🏃', live:false },
-  { name:'AD Ultra Boost',     icon:'⚡', live:false },
-  { name:'Yeezy',              icon:'🟡', live:false },
-  { name:'New Balance',        icon:'🔵', live:false },
-  { name:'On Running',         icon:'🌀', live:false },
-  { name:'Running Series',     icon:'🏃', live:false },
-  { name:'Asics',              icon:'🔴', live:false },
-  { name:'Dior',               icon:'👔', live:false },
-  { name:'Balenciaga',         icon:'🕶', live:false },
-  { name:'Gucci',              icon:'🟢', live:false },
-  { name:'BAPE',               icon:'🦍', live:false },
-  { name:'GGDB Golden Goose',  icon:'⭐', live:false },
-  { name:'Prada',              icon:'🔺', live:false },
-  { name:'Amiri',              icon:'💫', live:false },
-  { name:'Louis Vuitton',      icon:'🟤', live:false },
-  { name:'Lanvin Curb',        icon:'🪢', live:false },
-  { name:'Timberland',         icon:'🌲', live:false },
-  { name:'Vans Knu-Skool',     icon:'🎿', live:false },
-  { name:'Puma',               icon:'🐆', live:false },
-  { name:'Alo',                icon:'🧘', live:false },
-  { name:'Mihara Yasuhiro',    icon:'🎨', live:false },
-  { name:'Hermes',             icon:'🧡', live:false },
-  { name:'UGG',                icon:'🥾', live:false },
-  { name:'Birkenstock',        icon:'🩴', live:false },
-  { name:'Crocs',              icon:'🐊', live:false },
-  { name:'Off White',          icon:'⬜', live:false },
-  { name:"Kids' Shoes",        icon:'👶', live:false },
-  { name:'Clothing',           icon:'👕', live:false }
+var CATS=[
+  {name:'Camisas de Futebol',icon:'⚽',live:true},
+  {name:'NEW VT Dunk Low',icon:'🔥',live:true},
+  {name:'Alexander McQueen',icon:'💎',live:true},
+  {name:'Dunk',icon:'👟',live:false},{name:'AJ1',icon:'🏀',live:false},
+  {name:'AJ3',icon:'🏀',live:false},{name:'AJ4',icon:'🏀',live:false},
+  {name:'AJ5',icon:'🏀',live:false},{name:'AJ6',icon:'🏀',live:false},
+  {name:'Air Max',icon:'💨',live:false},{name:'Air More Uptempo',icon:'💨',live:false},
+  {name:'AF1',icon:'✔',live:false},{name:'Nike',icon:'✔',live:false},
+  {name:'NK Zoom',icon:'🏃',live:false},{name:'Kobe',icon:'🐍',live:false},
+  {name:'Adidas',icon:'🔱',live:false},{name:'Adidas Adizero',icon:'🏃',live:false},
+  {name:'AD Ultra Boost',icon:'⚡',live:false},{name:'Yeezy',icon:'🟡',live:false},
+  {name:'New Balance',icon:'🔵',live:false},{name:'On Running',icon:'🌀',live:false},
+  {name:'Running Series',icon:'🏃',live:false},{name:'Asics',icon:'🔴',live:false},
+  {name:'Dior',icon:'👔',live:false},{name:'Balenciaga',icon:'🕶',live:false},
+  {name:'Gucci',icon:'🟢',live:false},{name:'BAPE',icon:'🦍',live:false},
+  {name:'GGDB',icon:'⭐',live:false},{name:'Prada',icon:'🔺',live:false},
+  {name:'Amiri',icon:'💫',live:false},{name:'Louis Vuitton',icon:'🟤',live:false},
+  {name:'Lanvin',icon:'🪢',live:false},{name:'Timberland',icon:'🌲',live:false},
+  {name:'Vans',icon:'🎿',live:false},{name:'Puma',icon:'🐆',live:false},
+  {name:'Hermes',icon:'🧡',live:false},{name:'UGG',icon:'🥾',live:false},
+  {name:'Birkenstock',icon:'🩴',live:false},{name:'Crocs',icon:'🐊',live:false},
+  {name:'Off White',icon:'⬜',live:false},{name:"Kids' Shoes",icon:'👶',live:false},
+  {name:'Clothing',icon:'👕',live:false}
 ];
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// SIDEBAR
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-var nav = document.getElementById('sidebar-nav');
+var nav=document.getElementById('nav');
+var hb=document.createElement('button');
+hb.className='nb live active';hb.dataset.s='inicio';
+hb.innerHTML='<span>🏠</span><span>Início</span>';
+hb.onclick=function(){sa(hb);home()};
+nav.appendChild(hb);
 
-var homeBtn = document.createElement('button');
-homeBtn.className = 'nav-btn live active';
-homeBtn.dataset.search = 'inicio home';
-homeBtn.innerHTML = '<span>🏠</span><span>Início</span>';
-homeBtn.onclick = function() { setActive(homeBtn); renderHome(); };
-nav.appendChild(homeBtn);
-
-CATS.forEach(function(cat) {
-  var btn = document.createElement('button');
-  var count = PRODUCTS.filter(function(p){ return p.cat === cat.name; }).length;
-  btn.className = 'nav-btn' + (cat.live ? ' live' : '');
-  btn.dataset.search = cat.name.toLowerCase();
-  btn.innerHTML = '<span>' + cat.icon + '</span><span>' + cat.name + '</span>'
-    + (cat.live ? '<span class="badge">' + count + '</span>' : '');
-  btn.onclick = function() { setActive(btn); renderCat(cat.name, cat.icon); };
-  nav.appendChild(btn);
+CATS.forEach(function(c){
+  var n=PRODS.filter(function(p){return p.cat===c.name}).length;
+  var b=document.createElement('button');
+  b.className='nb'+(c.live?' live':'');b.dataset.s=c.name.toLowerCase();
+  b.innerHTML='<span>'+c.icon+'</span><span>'+c.name+'</span>'+(c.live?'<span class="badge">'+n+'</span>':'');
+  b.onclick=(function(cat,btn){return function(){sa(btn);cat.live?showCat(cat.name,cat.icon):null}})(c,b);
+  nav.appendChild(b);
 });
 
-function setActive(el) {
-  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
-  el.classList.add('active');
-}
+function sa(el){document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active')});el.classList.add('active')}
 
-document.getElementById('search-inp').addEventListener('input', function() {
-  var q = this.value.toLowerCase();
-  document.querySelectorAll('.nav-btn').forEach(function(btn) {
-    btn.style.display = (!q || btn.dataset.search.includes(q)) ? '' : 'none';
-  });
+document.getElementById('si').addEventListener('input',function(){
+  var q=this.value.toLowerCase();
+  document.querySelectorAll('.nb').forEach(function(b){b.style.display=(!q||b.dataset.s.includes(q))?'':' none'});
 });
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// HOME
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderHome() {
-  document.getElementById('page-title').textContent = 'CATÁLOGO';
-  document.getElementById('page-sub').textContent = '';
-
-  var html = '<div class="hero">'
-    + '<h2>PRODUTOS<br><span>PREMIUM</span></h2>'
-    + '<p>Navegue pelas categorias no menu lateral. Clique num produto para abrir as fotos em tela cheia.</p>'
-    + '<div class="hero-nums">'
-    + '<div><div class="n">' + PRODUCTS.length + '</div><div class="l">Produtos</div></div>'
-    + '<div><div class="n">3</div><div class="l">Categorias</div></div>'
-    + '<div><div class="n">40+</div><div class="l">Coleções</div></div>'
-    + '</div></div>'
-    + '<p class="sec">CATEGORIAS</p>'
-    + '<div class="cat-grid" id="home-cats"></div>';
-  document.getElementById('page-content').innerHTML = html;
-
-  var grid = document.getElementById('home-cats');
-  CATS.forEach(function(cat) {
-    var count = PRODUCTS.filter(function(p){ return p.cat === cat.name; }).length;
-    var card = document.createElement('div');
-    card.className = 'cat-card' + (cat.live ? ' live' : '');
-    card.innerHTML = '<div class="icon">' + cat.icon + '</div>'
-      + '<div class="name">' + cat.name + '</div>'
-      + '<div class="info">' + (cat.live ? count + ' modelos' : 'em breve') + '</div>'
-      + (cat.live ? '<div class="pill">DISPONÍVEL</div>' : '');
-    if (cat.live) {
-      card.onclick = (function(n, ic){ return function(){ renderCat(n, ic); }; })(cat.name, cat.icon);
-    }
-    grid.appendChild(card);
+function home(){
+  document.getElementById('ttl').textContent='CATÁLOGO';
+  document.getElementById('tsub').textContent='';
+  var h='<div class="hero"><h2>PRODUTOS<br><span>PREMIUM</span></h2>'
+   +'<p>Selecione uma categoria no menu. Clique num produto para ver todas as fotos.</p>'
+   +'<div class="hero-n"><div><div class="n">'+PRODS.length+'</div><div class="l">Produtos</div></div>'
+   +'<div><div class="n">3</div><div class="l">Categorias</div></div></div></div>'
+   +'<p class="sec">CATEGORIAS</p><div class="cg" id="cg"></div>';
+  document.getElementById('pc').innerHTML=h;
+  var cg=document.getElementById('cg');
+  CATS.forEach(function(c){
+    var n=PRODS.filter(function(p){return p.cat===c.name}).length;
+    var d=document.createElement('div');d.className='cc'+(c.live?' live':'');
+    d.innerHTML='<div class="ic">'+c.icon+'</div><div class="nm">'+c.name+'</div>'
+     +'<div class="inf">'+(c.live?n+' modelos':'em breve')+'</div>'
+     +(c.live?'<div class="pill">DISPONÍVEL</div>':'');
+    if(c.live)d.onclick=(function(n,i){return function(){showCat(n,i)}})(c.name,c.icon);
+    cg.appendChild(d);
   });
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CATEGORY PAGE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderCat(name, icon) {
-  var prods = PRODUCTS.filter(function(p){ return p.cat === name; });
-  document.getElementById('page-title').textContent = name.toUpperCase();
-  document.getElementById('page-sub').textContent = prods.length + ' modelos';
-
-  if (!prods.length) {
-    document.getElementById('page-content').innerHTML =
-      '<div class="empty"><div class="e-icon">' + (icon||'📦') + '</div>'
-      + '<p>' + name + '<br>Em breve.</p></div>';
+function showCat(name,icon){
+  var ps=PRODS.filter(function(p){return p.cat===name});
+  document.getElementById('ttl').textContent=name.toUpperCase();
+  document.getElementById('tsub').textContent=ps.length+' modelos';
+  if(!ps.length){
+    document.getElementById('pc').innerHTML='<div class="empty"><div class="ei">'+(icon||'📦')+'</div><p>'+name+'<br>Em breve.</p></div>';
     return;
   }
-
-  document.getElementById('page-content').innerHTML = '<div class="prod-grid" id="pg"></div>';
-  var grid = document.getElementById('pg');
-
-  prods.forEach(function(prod) {
-    var card = document.createElement('div');
-    card.className = 'prod-card';
-    var photoLabel = prod.photos.length > 1 ? '<div class="prod-photos">📷 ' + prod.photos.length + ' fotos</div>' : '';
-    card.innerHTML =
-      '<img src="' + imgUrl(prod.cover) + '" alt="' + prod.title + '" loading="lazy" onerror="this.style.background=\'#222\'">'
-      + '<div class="prod-info">'
-      + '<div class="prod-title">' + prod.title + '</div>'
-      + '<div class="prod-cat">' + prod.cat + '</div>'
-      + photoLabel
-      + '</div>';
-    card.onclick = (function(p){ return function(){ openLightbox(p); }; })(prod);
-    grid.appendChild(card);
+  document.getElementById('pc').innerHTML='<div class="pg" id="pg"></div>';
+  var pg=document.getElementById('pg');
+  ps.forEach(function(p){
+    var d=document.createElement('div');d.className='pd';
+    d.innerHTML='<img src="'+img(p.cover)+'" alt="'+p.title+'" loading="lazy" onerror="this.style.background=\'#222\'">'
+     +'<div class="pi"><div class="pt">'+p.title+'</div><div class="ps">'+p.cat+'</div>'
+     +(p.photos.length>1?'<div class="pp">📷 '+p.photos.length+' fotos</div>':'')+'</div>';
+    d.onclick=(function(pr){return function(){openLB(pr)}})(p);
+    pg.appendChild(d);
   });
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// LIGHTBOX
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-var LB = { photos: [], idx: 0, title: '' };
-
-function openLightbox(prod) {
-  LB.photos = prod.photos;
-  LB.idx = 0;
-  LB.title = prod.title;
-  document.getElementById('lightbox').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  drawLightbox();
+var LB={photos:[],idx:0,title:''};
+function openLB(p){LB.photos=p.photos;LB.idx=0;LB.title=p.title;document.getElementById('lb').classList.add('open');document.body.style.overflow='hidden';drawLB()}
+function drawLB(){
+  var i=document.getElementById('lbi');
+  i.style.opacity='.3';i.src=img(LB.photos[LB.idx]);
+  i.onload=function(){i.style.opacity='1'};
+  i.onerror=function(){i.src=img(LB.photos[LB.idx],'small');i.style.opacity='1'};
+  document.getElementById('lbn').textContent=(LB.idx+1)+' / '+LB.photos.length;
+  document.getElementById('lbt').textContent=LB.title;
+  document.getElementById('lbp').disabled=LB.idx===0;
+  document.getElementById('lbnx').disabled=LB.idx===LB.photos.length-1;
+  var s=document.getElementById('lbs');
+  if(LB.photos.length>1){
+    s.innerHTML=LB.photos.map(function(h,i){return'<img src="'+img(h,'small')+'" class="'+(i===LB.idx?'on':'')+'" onclick="gLB('+i+')" onerror="this.style.display=\'none\'">'}).join('');
+    s.style.display='flex';
+  }else s.style.display='none';
 }
-
-function drawLightbox() {
-  var img = document.getElementById('lb-img');
-  img.style.opacity = '0.3';
-  img.src = imgUrl(LB.photos[LB.idx]);
-  img.onload = function() { img.style.opacity = '1'; };
-  img.onerror = function() { img.src = imgUrl(LB.photos[LB.idx], 'small'); img.style.opacity = '1'; };
-
-  document.getElementById('lb-counter').textContent = (LB.idx + 1) + ' / ' + LB.photos.length;
-  document.getElementById('lb-title').textContent = LB.title;
-  document.getElementById('lb-prev').disabled = LB.idx === 0;
-  document.getElementById('lb-next').disabled = LB.idx === LB.photos.length - 1;
-
-  var strip = document.getElementById('lb-thumbs');
-  if (LB.photos.length > 1) {
-    strip.innerHTML = LB.photos.map(function(h, i) {
-      return '<img src="' + imgUrl(h, 'small') + '" class="' + (i === LB.idx ? 'on' : '') + '" onclick="jumpLB(' + i + ')" onerror="this.style.display=\'none\'">';
-    }).join('');
-    strip.style.display = 'flex';
-  } else {
-    strip.style.display = 'none';
-  }
-}
-
-function jumpLB(i) { LB.idx = i; drawLightbox(); }
-
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-document.getElementById('lb-close').onclick = closeLightbox;
-document.getElementById('lb-prev').onclick = function() { if (LB.idx > 0) { LB.idx--; drawLightbox(); } };
-document.getElementById('lb-next').onclick = function() { if (LB.idx < LB.photos.length - 1) { LB.idx++; drawLightbox(); } };
-document.getElementById('lightbox').addEventListener('click', function(e) {
-  if (e.target === this) closeLightbox();
+function gLB(i){LB.idx=i;drawLB()}
+function closeLB(){document.getElementById('lb').classList.remove('open');document.body.style.overflow=''}
+document.getElementById('lbx').onclick=closeLB;
+document.getElementById('lbp').onclick=function(){if(LB.idx>0){LB.idx--;drawLB()}};
+document.getElementById('lbnx').onclick=function(){if(LB.idx<LB.photos.length-1){LB.idx++;drawLB()}};
+document.getElementById('lb').addEventListener('click',function(e){if(e.target===this)closeLB()});
+document.addEventListener('keydown',function(e){
+  if(!document.getElementById('lb').classList.contains('open'))return;
+  if(e.key==='Escape')closeLB();
+  if(e.key==='ArrowLeft'&&LB.idx>0){LB.idx--;drawLB()}
+  if(e.key==='ArrowRight'&&LB.idx<LB.photos.length-1){LB.idx++;drawLB()}
 });
-document.addEventListener('keydown', function(e) {
-  if (!document.getElementById('lightbox').classList.contains('open')) return;
-  if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft'  && LB.idx > 0)                    { LB.idx--; drawLightbox(); }
-  if (e.key === 'ArrowRight' && LB.idx < LB.photos.length - 1) { LB.idx++; drawLightbox(); }
-});
-var tX = 0;
-document.getElementById('lightbox').addEventListener('touchstart', function(e) { tX = e.touches[0].clientX; }, { passive: true });
-document.getElementById('lightbox').addEventListener('touchend', function(e) {
-  var dx = e.changedTouches[0].clientX - tX;
-  if (Math.abs(dx) > 50) {
-    if (dx < 0 && LB.idx < LB.photos.length - 1) { LB.idx++; drawLightbox(); }
-    if (dx > 0 && LB.idx > 0)                     { LB.idx--; drawLightbox(); }
-  }
-}, { passive: true });
-
-// mobile menu
-document.getElementById('mob-btn').onclick = function() {
-  document.getElementById('sidebar').classList.toggle('open');
-};
-document.querySelector('main').addEventListener('click', function() {
-  document.getElementById('sidebar').classList.remove('open');
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// INIT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-document.getElementById('footer-yr').textContent = new Date().getFullYear();
-renderHome();
+var tx=0;
+document.getElementById('lb').addEventListener('touchstart',function(e){tx=e.touches[0].clientX},{passive:true});
+document.getElementById('lb').addEventListener('touchend',function(e){
+  var d=e.changedTouches[0].clientX-tx;
+  if(Math.abs(d)>50){if(d<0&&LB.idx<LB.photos.length-1){LB.idx++;drawLB()}else if(d>0&&LB.idx>0){LB.idx--;drawLB()}}
+},{passive:true});
+document.getElementById('mob').onclick=function(){document.getElementById('sb').classList.toggle('open')};
+document.querySelector('main').addEventListener('click',function(){document.getElementById('sb').classList.remove('open')});
+home();
 </script>
-
 </body>
 </html>
