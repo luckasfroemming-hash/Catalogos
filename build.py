@@ -1,225 +1,232 @@
-import urllib.request, urllib.error, re, json, time, os, sys, traceback
+import urllib.request, re, json, time, os, sys, ssl, traceback
 
 BASE    = 'https://ovosneaker.x.yupoo.com'
 CDN     = 'https://photo.yupoo.com/ovosneaker/'
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120',
     'Referer'   : BASE + '/',
     'Accept'    : 'text/html,application/xhtml+xml,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
 }
-BAD = ['whatsapp','instagram','discord','wechat','telegram','groups','spreadsheet']
-
-# ── network ──────────────────────────────────────────────────────────────────
+BAD = ['whatsapp','instagram','discord','wechat','telegram','spreadsheet']
+CTX = ssl.create_default_context()
+CTX.check_hostname = False
+CTX.verify_mode    = ssl.CERT_NONE
 
 def fetch(url, tries=3):
     for i in range(tries):
         try:
             req = urllib.request.Request(url, headers=HEADERS)
-            ctx = __import__('ssl').create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = __import__('ssl').CERT_NONE
-            with urllib.request.urlopen(req, timeout=30, context=ctx) as r:
+            with urllib.request.urlopen(req, timeout=30, context=CTX) as r:
                 return r.read().decode('utf-8', errors='ignore')
         except Exception as e:
-            print(f'  fetch attempt {i+1} failed: {e}')
-            if i < tries-1:
-                time.sleep(4*(i+1))
+            print(f'  [{i+1}/{tries}] FAIL {url}: {e}')
+            if i < tries-1: time.sleep(5*(i+1))
     return ''
 
 def dl(h):
-    path = 'images/' + h + '.jpg'
-    if os.path.exists(path) and os.path.getsize(path) > 1000:
+    p = 'images/' + h + '.jpg'
+    if os.path.exists(p) and os.path.getsize(p) > 1000:
         return True
-    for size in ['medium', 'small']:
+    for size in ['medium','small']:
         try:
-            url = CDN + h + '/' + size + '.jpg'
-            req = urllib.request.Request(url, headers=HEADERS)
-            ctx = __import__('ssl').create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = __import__('ssl').CERT_NONE
-            with urllib.request.urlopen(req, timeout=20, context=ctx) as r:
-                data = r.read()
-            if len(data) > 2000:
-                with open(path, 'wb') as f:
-                    f.write(data)
+            req = urllib.request.Request(CDN+h+'/'+size+'.jpg', headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=20, context=CTX) as r:
+                d = r.read()
+            if len(d) > 2000:
+                open(p,'wb').write(d)
                 return True
-        except Exception as e:
-            print(f'  dl {size} failed: {e}')
+        except: pass
     return False
 
-# ── parsing ───────────────────────────────────────────────────────────────────
-
 def clean(t):
-    try:
-        for w in BAD:
-            idx = t.lower().find(w)
-            if 0 < idx < len(t):
-                t = t[:idx]
-        t = re.sub(r'\+\d[\d\s\-]+', '', t)
-        t = re.sub(r'[【〖][^】〗]*[】〗]', '', t)
-        t = re.sub(r'\s+', ' ', t).strip()
-        return t or 'Produto'
-    except Exception:
-        return 'Produto'
+    if not t: return 'Produto'
+    for w in BAD:
+        i = t.lower().find(w)
+        if 0 < i < len(t): t = t[:i]
+    t = re.sub(r'\+\d[\d\s-]+','',t)
+    t = re.sub(r'[【〖《][^】〗》]*[】〗》]','',t)
+    return re.sub(r'\s+',' ',t).strip() or 'Produto'
+
+def parse(html, cat):
+    """
+    Robust album parser — tries multiple strategies.
+    Yupoo category pages have album items in a grid.
+    The album ID is in the href, cover image is nearby.
+    Title may be in: title attribute, alt attribute, or adjacent text.
+    """
+    albums = []
+    seen   = set()
+
+    # Strategy 1: href with full domain URL
+    # Strategy 2: href with relative URL /albums/ID
+    LINK_PATTERNS = [
+        re.compile(r'href="(?:https?://ovosneaker\.x\.yupoo\.com)?/albums/(\d+)[^"]*"'),
+    ]
+    IMG_RE   = re.compile(r'photo\.yupoo\.com/ovosneaker/([a-f0-9]{8})/(?:medium|small)\.jpg')
+    TITLE_RE = re.compile(r'(?:title|alt)="([^"]{2,120})"')
+    TEXT_RE  = re.compile(r'>([^<\n]{3,80})<')
+
+    for link_pat in LINK_PATTERNS:
+        ms = list(link_pat.finditer(html))
+        print(f'  Link pattern found {len(ms)} matches')
+
+        for idx, m in enumerate(ms):
+            aid = m.group(1)
+            if not aid.isdigit() or aid in seen:
+                continue
+
+            # Look at a window around the link for image + title
+            start = max(0, m.start() - 100)
+            end   = min(len(html), m.end() + 1500)
+            window = html[start:end]
+
+            # Find cover image hash
+            img_m = IMG_RE.search(window)
+            if not img_m:
+                continue
+
+            # Find title: check the <a> tag itself first
+            a_tag = m.group(0)
+            title_m = TITLE_RE.search(a_tag)
+            title = title_m.group(1) if title_m else ''
+
+            # If not found in <a>, check surrounding 600 chars
+            if not title:
+                nearby = html[m.end():min(len(html), m.end()+600)]
+                title_m = TITLE_RE.search(nearby)
+                if title_m:
+                    title = title_m.group(1)
+
+            # Last resort: adjacent visible text
+            if not title:
+                text_m = TEXT_RE.search(html[m.end():min(len(html), m.end()+300)])
+                if text_m:
+                    title = text_m.group(1).strip()
+
+            if not title:
+                title = 'Produto ' + aid
+
+            if any(w in title.lower() for w in BAD):
+                continue
+
+            seen.add(aid)
+            albums.append({
+                'id'    : aid,
+                'title' : clean(title),
+                'cover' : img_m.group(1),
+                'cat'   : cat,
+                'photos': [img_m.group(1)],
+            })
+
+    return albums
 
 def catname(html):
     try:
         m = re.search(r'<title>([^<]+)', html)
-        if not m:
-            return ''
+        if not m: return ''
         n = m.group(1)
-        for pat in [r'(?i)whatsapp.*', r'(?i)ovosneaker.*', r'(?i)supplier.*',
-                    r'(?i)catalog.*', r'分类.*', r'\|.*']:
-            n = re.sub(pat, '', n)
-        return n.strip(' |-.')[:60]
-    except Exception:
-        return ''
+        for pat in [r'(?i)whatsapp.*',r'(?i)ovosneaker.*',r'(?i)supplier.*',
+                    r'(?i)catalog.*',r'分类.*',r'\|.*']:
+            n = re.sub(pat,'',n)
+        return n.strip(' |-.') [:60]
+    except: return ''
 
-def parse_albums(html, cat_name):
-    albums = []
-    seen   = set()
-    try:
-        # Pattern: find album links with title attribute
-        # Two possible orderings: href first, or title first
-        patterns = [
-            re.compile(r'href="https://ovosneaker\.x\.yupoo\.com/albums/(\d+)[^"]*"[^>]+title="([^"]+)"'),
-            re.compile(r'title="([^"]+)"[^>]+href="https://ovosneaker\.x\.yupoo\.com/albums/(\d+)[^"]*"'),
-        ]
-        img_re = re.compile(r'/([a-f0-9]{8})/(?:medium|small)\.jpg')
-
-        for pat_idx, pat in enumerate(patterns):
-            ms = list(pat.finditer(html))
-            for i, m in enumerate(ms):
-                if pat_idx == 0:
-                    aid, title = m.group(1), m.group(2)
-                else:
-                    title, aid = m.group(1), m.group(2)
-
-                if not aid.isdigit():
-                    continue
-                if aid in seen:
-                    continue
-                if any(w in title.lower() for w in BAD):
-                    continue
-
-                seen.add(aid)
-
-                # Find cover image after this link
-                end = ms[i+1].start() if i+1 < len(ms) else min(m.start()+2000, len(html))
-                chunk = html[m.start():end]
-                img_m = img_re.search(chunk)
-                cover = img_m.group(1) if img_m else None
-                if not cover:
-                    continue
-
-                albums.append({
-                    'id'    : aid,
-                    'title' : clean(title),
-                    'cover' : cover,
-                    'cat'   : cat_name,
-                    'photos': [cover],
-                })
-
-    except Exception as e:
-        print(f'  parse error: {e}')
-        traceback.print_exc()
-
-    return albums
-
-# ── main ──────────────────────────────────────────────────────────────────────
+# ─── MAIN ────────────────────────────────────────────────────────────────────
 
 os.makedirs('images', exist_ok=True)
 
 print('='*60)
-print('STEP 1: Fetching main page')
-print('='*60)
-main_html = fetch(BASE + '/albums')
-if not main_html:
-    print('ERROR: could not fetch main page')
-    sys.exit(1)
-print(f'Main page fetched: {len(main_html)} chars')
+print('STEP 1: Fetch main albums page')
+main = fetch(BASE + '/albums')
+print(f'Got {len(main)} chars')
 
-sub_ids = list(dict.fromkeys(re.findall(r'/categories/(\d+)\?isSubCate=true', main_html)))
-top_ids = list(dict.fromkeys(re.findall(r'/categories/(\d+)"', main_html)))
+# Show a snippet of HTML to help debug structure
+snippet = main[5000:5500] if len(main) > 5000 else main[:500]
+print('HTML snippet (5000-5500):')
+print(snippet)
+print()
+
+sub_ids = list(dict.fromkeys(re.findall(r'/categories/(\d+)\?isSubCate=true', main)))
+top_ids = list(dict.fromkeys(re.findall(r'/categories/(\d+)"', main)))
 all_ids = list(dict.fromkeys(sub_ids + top_ids))
-print(f'Found {len(sub_ids)} subcategories + {len(top_ids)} top-level = {len(all_ids)} total')
+print(f'Categories: {len(sub_ids)} sub + {len(top_ids)} top = {len(all_ids)} total')
+
+# Also try to parse albums directly from the main page
+print('\nParsing albums from main page directly...')
+main_albums = parse(main, 'Destaque')
+print(f'Found {len(main_albums)} albums on main page')
 
 print('\n' + '='*60)
-print('STEP 2: Scraping each category')
-print('='*60)
+print('STEP 2: Scrape each category')
 albums   = []
 seen_ids = set()
+
+# Start with albums found on main page
+for a in main_albums:
+    if a['id'] not in seen_ids:
+        seen_ids.add(a['id'])
+        albums.append(a)
 
 for i, cid in enumerate(all_ids):
     is_sub = cid in sub_ids
     url    = BASE + '/categories/' + cid + ('?isSubCate=true' if is_sub else '')
-    print(f'[{i+1}/{len(all_ids)}] cat {cid}', end=' ... ')
-    sys.stdout.flush()
+    print(f'\n[{i+1}/{len(all_ids)}] cat {cid} {"(sub)" if is_sub else ""}')
 
     try:
         html = fetch(url)
         if not html:
-            print('SKIP (empty response)')
+            print('  SKIP: empty response')
             continue
 
+        print(f'  Got {len(html)} chars')
+
+        # Show link count for debugging
+        abs_links = len(re.findall(r'href="https://ovosneaker\.x\.yupoo\.com/albums/', html))
+        rel_links = len(re.findall(r'href="/albums/', html))
+        imgs      = len(re.findall(r'photo\.yupoo\.com/ovosneaker/', html))
+        print(f'  abs album links: {abs_links}, rel album links: {rel_links}, images: {imgs}')
+
         name  = catname(html) or ('Sub' if is_sub else 'Cat') + cid
-        found = [a for a in parse_albums(html, name) if a['id'] not in seen_ids]
-        for a in found:
-            seen_ids.add(a['id'])
+        found = [a for a in parse(html, name) if a['id'] not in seen_ids]
+        for a in found: seen_ids.add(a['id'])
         albums.extend(found)
-        print(f'{len(found)} new albums | total={len(albums)} | "{name}"')
+        print(f'  -> {len(found)} new | total={len(albums)} | "{name}"')
+
     except Exception as e:
-        print(f'ERROR: {e}')
+        print(f'  ERROR: {e}')
         traceback.print_exc()
 
     time.sleep(0.5)
 
-print(f'\nTotal albums collected: {len(albums)}')
+print(f'\n{"="*60}')
+print(f'TOTAL: {len(albums)} albums found')
 
-if not albums:
-    print('WARNING: no albums found! Check if site structure changed.')
-
-print('\n' + '='*60)
-print('STEP 3: Saving catalog.json')
-print('='*60)
+print('\nSTEP 3: Save catalog.json')
 try:
-    with open('catalog.json', 'w', encoding='utf-8') as f:
-        json.dump(albums, f, ensure_ascii=False, indent=None)
-    print(f'Saved {len(albums)} albums to catalog.json')
+    with open('catalog.json','w',encoding='utf-8') as f:
+        json.dump(albums, f, ensure_ascii=False)
+    print(f'Saved {len(albums)} albums')
 except Exception as e:
-    print(f'ERROR saving catalog.json: {e}')
-    traceback.print_exc()
-    sys.exit(1)
+    print(f'ERROR: {e}'); traceback.print_exc()
 
-print('\n' + '='*60)
-print('STEP 4: Downloading cover images')
-print('='*60)
-ok_count = fail_count = 0
+print('\nSTEP 4: Download images')
+ok = fail = 0
 for i, a in enumerate(albums):
     try:
-        result = dl(a['cover'])
-        if result:
-            ok_count += 1
-            print(f'[{i+1}/{len(albums)}] OK  {a["cover"]}')
-        else:
-            fail_count += 1
-            print(f'[{i+1}/{len(albums)}] FAIL {a["cover"]} | {a["title"][:40]}')
+        if dl(a['cover']): ok += 1; print(f'[{i+1}/{len(albums)}] OK  {a["cover"]}')
+        else:              fail+=1; print(f'[{i+1}/{len(albums)}] FAIL {a["cover"]}')
     except Exception as e:
-        fail_count += 1
-        print(f'[{i+1}/{len(albums)}] ERR  {a["cover"]}: {e}')
+        fail += 1; print(f'[{i+1}/{len(albums)}] ERR {e}')
     time.sleep(0.2)
+print(f'Images: {ok} OK, {fail} failed')
 
-print(f'\nImages: {ok_count} OK, {fail_count} failed')
-
-print('\n' + '='*60)
-print('STEP 5: Generating index.html')
-print('='*60)
+print('\nSTEP 5: Generate index.html')
 try:
-    cats  = list(dict.fromkeys(a['cat'] for a in albums))
-    pj    = json.dumps(albums, ensure_ascii=False)
-    cj    = json.dumps(cats,   ensure_ascii=False)
-
-    parts = [
+    cats = list(dict.fromkeys(a['cat'] for a in albums))
+    pj   = json.dumps(albums, ensure_ascii=False)
+    cj   = json.dumps(cats,   ensure_ascii=False)
+    page = ''.join([
         '<!DOCTYPE html><html lang="pt-BR"><head>',
         '<meta charset="UTF-8">',
         '<meta name="viewport" content="width=device-width,initial-scale=1.0">',
@@ -243,28 +250,18 @@ try:
         '<img id="lbi" src="" alt="">',
         '<button class="la" id="lbnx">&#8250;</button>',
         '</div>',
-        '<div id="lbs"></div>',
-        '<div id="lbt"></div>',
+        '<div id="lbs"></div><div id="lbt"></div>',
         '</div>',
         '<button id="mob">&#9776;</button>',
-        '<script>',
-        'var P=', pj, ';',
-        'var C=', cj, ';',
-        '</script>',
+        '<script>var P=', pj, ';var C=', cj, ';</script>',
         '<script src="app.js"></script>',
         '</body></html>',
-    ]
-
-    with open('index.html', 'w', encoding='utf-8') as f:
-        f.write(''.join(parts))
-
-    size = os.path.getsize('index.html')
-    print(f'index.html generated: {size} bytes, {len(albums)} products, {len(cats)} categories')
+    ])
+    with open('index.html','w',encoding='utf-8') as f:
+        f.write(page)
+    print(f'index.html: {os.path.getsize("index.html")} bytes, {len(albums)} products, {len(cats)} cats')
 except Exception as e:
-    print(f'ERROR generating index.html: {e}')
-    traceback.print_exc()
-    sys.exit(1)
+    print(f'ERROR: {e}'); traceback.print_exc()
 
 print('\n' + '='*60)
-print('ALL DONE')
-print('='*60)
+print('DONE')
