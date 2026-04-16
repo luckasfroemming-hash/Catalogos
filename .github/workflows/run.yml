@@ -3,7 +3,7 @@ name: Build Catalog
 on:
   workflow_dispatch:
   push:
-    paths: ['build.py']
+    paths: ['build.py', 'push_images.py']
   schedule:
     - cron: '0 6 * * 0'
 
@@ -20,10 +20,31 @@ jobs:
       - name: Run catalog builder
         run: python3 build.py
 
-      - name: Commit results
+      - name: Push index and catalog files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add images/ index.html catalog.json style.css app.js || true
-          git diff --cached --quiet || git commit -m "rebuild catalog [skip ci]"
+          git config http.postBuffer 524288000
+          git add index.html catalog.json style.css app.js || true
+          git diff --cached --quiet || git commit -m "rebuild catalog index [skip ci]"
           git push
+
+      - name: Push images in batches of 300
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.postBuffer 524288000
+          find images/ -name "*.jpg" 2>/dev/null | sort > /tmp/all_images.txt
+          TOTAL=$(wc -l < /tmp/all_images.txt)
+          echo "Total images to push: $TOTAL"
+          split -l 300 /tmp/all_images.txt /tmp/batch_
+          BATCH=0
+          for f in /tmp/batch_*; do
+            BATCH=$((BATCH+1))
+            echo "=== Batch $BATCH ==="
+            xargs git add < "$f" || true
+            git diff --cached --quiet || git commit -m "images batch $BATCH [skip ci]"
+            git push
+            sleep 2
+          done
+          echo "Done! $BATCH batches pushed."
