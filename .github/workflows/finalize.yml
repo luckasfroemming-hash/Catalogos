@@ -1,0 +1,60 @@
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run cleanup OVO
+        run: python cleanup_ovo.py
+
+      - name: Commit cleanup
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Cleanup: sem mudancas"
+          else
+            git commit -m "Cleanup: remover OVO Spreadsheet"
+            git push
+          fi
+
+      - name: Run merge categories
+        run: python merge_categories.py
+
+      - name: Commit merge
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Merge: sem mudancas"
+          else
+            git commit -m "Merge: consolidar categorias duplicadas"
+            git push
+          fi
+
+      - name: Run enrich titles
+        run: python enrich_titles.py
+
+      - name: Final commit
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Enrich: sem mudancas"
+          else
+            git commit -m "Enrich: atualizar titulos dos albuns"
+            git push
+          fi
