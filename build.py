@@ -1,267 +1,382 @@
-import urllib.request, re, json, time, os, sys, ssl, traceback
+#!/usr/bin/env python3
+"""
+build.py — Scraper Yupoo com categorização por marca.
 
-BASE    = 'https://ovosneaker.x.yupoo.com'
-CDN     = 'https://photo.yupoo.com/ovosneaker/'
+- Lista categorias do Yupoo
+- Para cada categoria, lista álbuns
+- Baixa imagens para images/<categoria-slug>/<album-id>/
+- Gera data.json com {categorias: [{nome, slug, albuns: [{id, titulo, capa, imagens}]}]}
+- Remove QUALQUER menção a "ovosneaker" nos títulos
+- Classifica álbuns por MARCA (Nike, Adidas, Jordan, etc.) detectando no título
+"""
+
+import os
+import re
+import json
+import time
+import hashlib
+from pathlib import Path
+from urllib.parse import urljoin, urlparse
+
+import requests
+from bs4 import BeautifulSoup
+
+# ─── CONFIG ──────────────────────────────────────────────────────────────────
+BASE_URL = "https://ovosneaker.x.yupoo.com"
+OUT_DIR = Path("images")
+DATA_FILE = Path("data.json")
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120',
-    'Referer'   : BASE + '/',
-    'Accept'    : 'text/html,application/xhtml+xml,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.9',
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    "Referer": BASE_URL + "/",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
 }
-BAD = ['whatsapp','instagram','discord','wechat','telegram','spreadsheet']
-CTX = ssl.create_default_context()
-CTX.check_hostname = False
-CTX.verify_mode    = ssl.CERT_NONE
+BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "300"))
+SLEEP = 0.3
 
-def fetch(url, tries=3):
-    for i in range(tries):
+# Termos a remover/censurar dos títulos
+CENSOR_PATTERNS = [
+    re.compile(r"【\s*\d+\s*[yY]\s*】", re.IGNORECASE),   # 【160y】 【 200Y 】 etc
+    re.compile(r"\[\s*\d+\s*[yY]\s*\]", re.IGNORECASE),   # [160y] variante ASCII
+    re.compile(r"ovosneaker", re.IGNORECASE),
+    re.compile(r"whatsapp[\s:+]*\+?\d[\d\s\-]+", re.IGNORECASE),
+    re.compile(r"wechat[\s:+]*[\w\-]+", re.IGNORECASE),
+    re.compile(r"\+?86[\s\-]?\d{3}[\s\-]?\d{4}[\s\-]?\d{4}", re.IGNORECASE),
+    re.compile(r"supplier product catalog", re.IGNORECASE),
+    re.compile(r"\|\s*照片\s*\|", re.IGNORECASE),
+]
+
+# Marcas reconhecidas — ordem importa (mais específico primeiro)
+BRANDS = [
+    ("Air Jordan", ["air jordan", "aj1", "aj2", "aj3", "aj4", "aj5", "aj6",
+                    "aj11", "aj12", "aj13", "jordan"]),
+    ("Nike",      ["nike", "dunk", "sb dunk", "air force", "af1",
+                   "air max", "vapormax", "cortez", "blazer"]),
+    ("Adidas",    ["adidas", "yeezy", "samba", "gazelle", "spezial",
+                   "campus", "forum", "stan smith", "superstar"]),
+    ("New Balance", ["new balance", "nb 550", "nb550", "nb 9060",
+                     "nb9060", "nb 2002", "nb 327"]),
+    ("Asics",     ["asics", "gel-", "gel "]),
+    ("Puma",      ["puma", "speedcat", "palermo", "suede"]),
+    ("Converse",  ["converse", "chuck taylor", "chuck 70"]),
+    ("Vans",      ["vans", "old skool", "sk8"]),
+    ("Salomon",   ["salomon", "xt-6", "xt6", "xa pro"]),
+    ("On Running", ["on running", "on cloud", "cloudmonster"]),
+    ("Balenciaga", ["balenciaga", "triple s", "speed trainer"]),
+    ("Louis Vuitton", ["louis vuitton", "lv trainer", "lv "]),
+    ("Dior",      ["dior", "b22", "b23", "b30"]),
+    ("Gucci",     ["gucci", "rhyton", "screener"]),
+    ("Prada",     ["prada"]),
+    ("Fear of God", ["fear of god", "fog"]),
+    ("Reebok",    ["reebok", "club c", "classic leather"]),
+    ("Timberland", ["timberland"]),
+    ("Ugg",       ["ugg"]),
+]
+
+# ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+def clean_title(raw: str) -> str:
+    """Remove menções ao fornecedor e ruído."""
+    t = raw or ""
+    for pat in CENSOR_PATTERNS:
+        t = pat.sub("", t)
+    # Remove pipes/traços residuais no início/fim
+    t = re.sub(r"^[\s\|\-–—]+", "", t)
+    t = re.sub(r"[\s\|\-–—]+$", "", t)
+    # Colapsa espaços
+    t = re.sub(r"\s+", " ", t).strip()
+    return t or "Produto"
+
+def detect_brand(title: str) -> str:
+    """Detecta marca pelo título do álbum."""
+    t = title.lower()
+    for brand, keywords in BRANDS:
+        for kw in keywords:
+            if kw in t:
+                return brand
+    return "Outros"
+
+def slugify(s: str) -> str:
+    s = s.lower()
+    s = re.sub(r"[^\w\s-]", "", s)
+    s = re.sub(r"[\s_-]+", "-", s).strip("-")
+    return s or "item"
+
+def fetch(url: str, retries: int = 3) -> requests.Response | None:
+    """GET com retry."""
+    for attempt in range(retries):
         try:
-            req = urllib.request.Request(url, headers=HEADERS)
-            with urllib.request.urlopen(req, timeout=30, context=CTX) as r:
-                return r.read().decode('utf-8', errors='ignore')
-        except Exception as e:
-            print(f'  [{i+1}/{tries}] FAIL {url}: {e}')
-            if i < tries-1: time.sleep(5*(i+1))
-    return ''
+            r = requests.get(url, headers=HEADERS, timeout=20)
+            if r.status_code == 200:
+                return r
+            if r.status_code == 404:
+                return None
+            print(f"  ⚠ HTTP {r.status_code} em {url}")
+        except requests.RequestException as e:
+            print(f"  ⚠ erro {e} em {url}")
+        time.sleep(1 + attempt)
+    return None
 
-def dl(h):
-    p = 'images/' + h + '.jpg'
-    if os.path.exists(p) and os.path.getsize(p) > 1000:
+def download_image(url: str, dest: Path) -> bool:
+    """Baixa imagem se ainda não existe."""
+    if dest.exists() and dest.stat().st_size > 1000:
         return True
-    for size in ['medium','small']:
-        try:
-            req = urllib.request.Request(CDN+h+'/'+size+'.jpg', headers=HEADERS)
-            with urllib.request.urlopen(req, timeout=20, context=CTX) as r:
-                d = r.read()
-            if len(d) > 2000:
-                open(p,'wb').write(d)
-                return True
-        except: pass
-    return False
+    r = fetch(url)
+    if not r:
+        return False
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(r.content)
+    return True
 
-def clean(t):
-    if not t: return 'Produto'
-    for w in BAD:
-        i = t.lower().find(w)
-        if 0 < i < len(t): t = t[:i]
-    t = re.sub(r'\+\d[\d\s-]+','',t)
-    t = re.sub(r'[【〖《][^】〗》]*[】〗》]','',t)
-    return re.sub(r'\s+',' ',t).strip() or 'Produto'
+# ─── SCRAPER ─────────────────────────────────────────────────────────────────
 
-def parse(html, cat):
-    """
-    Robust album parser — tries multiple strategies.
-    Yupoo category pages have album items in a grid.
-    The album ID is in the href, cover image is nearby.
-    Title may be in: title attribute, alt attribute, or adjacent text.
-    """
+def list_categories() -> list[dict]:
+    """Scrapeia página principal buscando links de categorias."""
+    r = fetch(BASE_URL + "/categories")
+    if not r:
+        r = fetch(BASE_URL + "/")
+    if not r:
+        print("❌ Não consegui acessar a página inicial do Yupoo")
+        return []
+
+    soup = BeautifulSoup(r.text, "html.parser")
+    cats = []
+    seen = set()
+
+    # Yupoo lista categorias como <a href="/categories/XXXXX">
+    for a in soup.select("a[href*='/categories/']"):
+        href = a.get("href", "")
+        name = a.get_text(strip=True)
+        if not href or not name:
+            continue
+        # Normaliza URL
+        url = urljoin(BASE_URL, href)
+        m = re.search(r"/categories/(\d+)", url)
+        if not m:
+            continue
+        cat_id = m.group(1)
+        if cat_id in seen:
+            continue
+        seen.add(cat_id)
+        cats.append({
+            "id": cat_id,
+            "name": clean_title(name),
+            "url": url,
+        })
+    print(f"📂 Encontradas {len(cats)} categorias no Yupoo")
+    return cats
+
+def list_albums_in_category(cat: dict) -> list[dict]:
+    """Scrapeia álbuns de uma categoria (com paginação)."""
     albums = []
-    seen   = set()
-
-    # Strategy 1: href with full domain URL
-    # Strategy 2: href with relative URL /albums/ID
-    LINK_PATTERNS = [
-        re.compile(r'href="(?:https?://ovosneaker\.x\.yupoo\.com)?/albums/(\d+)[^"]*"'),
-    ]
-    IMG_RE   = re.compile(r'photo\.yupoo\.com/ovosneaker/([a-f0-9]{8})/(?:medium|small)\.jpg')
-    TITLE_RE = re.compile(r'(?:title|alt)="([^"]{2,120})"')
-    TEXT_RE  = re.compile(r'>([^<\n]{3,80})<')
-
-    for link_pat in LINK_PATTERNS:
-        ms = list(link_pat.finditer(html))
-        print(f'  Link pattern found {len(ms)} matches')
-
-        for idx, m in enumerate(ms):
-            aid = m.group(1)
-            if not aid.isdigit() or aid in seen:
+    page = 1
+    while True:
+        url = f"{cat['url']}?page={page}"
+        r = fetch(url)
+        if not r:
+            break
+        soup = BeautifulSoup(r.text, "html.parser")
+        # Álbuns aparecem como <a class="album__main" href="/albums/XXXXX">
+        cards = soup.select("a.album__main, a[href*='/albums/']")
+        found_in_page = 0
+        for a in cards:
+            href = a.get("href", "")
+            m = re.search(r"/albums/(\d+)", href)
+            if not m:
                 continue
-
-            # Look at a window around the link for image + title
-            start = max(0, m.start() - 100)
-            end   = min(len(html), m.end() + 1500)
-            window = html[start:end]
-
-            # Find cover image hash
-            img_m = IMG_RE.search(window)
-            if not img_m:
+            album_id = m.group(1)
+            if any(x["id"] == album_id for x in albums):
                 continue
-
-            # Find title: check the <a> tag itself first
-            a_tag = m.group(0)
-            title_m = TITLE_RE.search(a_tag)
-            title = title_m.group(1) if title_m else ''
-
-            # If not found in <a>, check surrounding 600 chars
-            if not title:
-                nearby = html[m.end():min(len(html), m.end()+600)]
-                title_m = TITLE_RE.search(nearby)
-                if title_m:
-                    title = title_m.group(1)
-
-            # Last resort: adjacent visible text
-            if not title:
-                text_m = TEXT_RE.search(html[m.end():min(len(html), m.end()+300)])
-                if text_m:
-                    title = text_m.group(1).strip()
-
-            if not title:
-                title = 'Produto ' + aid
-
-            if any(w in title.lower() for w in BAD):
-                continue
-
-            seen.add(aid)
+            title = a.get("title") or a.get_text(strip=True) or ""
+            # Tenta capturar imagem de capa
+            img = a.select_one("img")
+            cover = ""
+            if img:
+                cover = img.get("data-origin-src") or img.get("data-src") or img.get("src", "")
+                if cover.startswith("//"):
+                    cover = "https:" + cover
             albums.append({
-                'id'    : aid,
-                'title' : clean(title),
-                'cover' : img_m.group(1),
-                'cat'   : cat,
-                'photos': [img_m.group(1)],
+                "id": album_id,
+                "title": clean_title(title),
+                "raw_title": title,
+                "url": urljoin(BASE_URL, href.split("?")[0]),
+                "cover_url": cover,
             })
-
+            found_in_page += 1
+        if found_in_page == 0:
+            break
+        page += 1
+        time.sleep(SLEEP)
+        if page > 50:  # safety
+            break
     return albums
 
-def catname(html):
-    try:
-        m = re.search(r'<title>([^<]+)', html)
-        if not m: return ''
-        n = m.group(1)
-        for pat in [r'(?i)whatsapp.*',r'(?i)ovosneaker.*',r'(?i)supplier.*',
-                    r'(?i)catalog.*',r'分类.*',r'\|.*']:
-            n = re.sub(pat,'',n)
-        return n.strip(' |-.') [:60]
-    except: return ''
+def list_images_in_album(album: dict) -> list[str]:
+    """Scrapeia URLs de imagens de um álbum."""
+    r = fetch(album["url"])
+    if not r:
+        return []
+    soup = BeautifulSoup(r.text, "html.parser")
+    urls = []
+    seen = set()
+    for img in soup.select("img"):
+        src = (img.get("data-origin-src")
+               or img.get("data-src")
+               or img.get("src", ""))
+        if not src:
+            continue
+        if src.startswith("//"):
+            src = "https:" + src
+        if "photo.yupoo.com" not in src:
+            continue
+        # Pega a versão grande
+        src = re.sub(r"/(small|medium|square)\.", "/", src)
+        if src in seen:
+            continue
+        seen.add(src)
+        urls.append(src)
+    return urls
 
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 
-os.makedirs('images', exist_ok=True)
+def main():
+    # Carrega progresso anterior (pra retomar)
+    data = {"categorias": [], "total_albuns": 0, "total_imagens": 0}
+    if DATA_FILE.exists():
+        try:
+            data = json.loads(DATA_FILE.read_text())
+            print(f"📄 Retomando — {data.get('total_albuns',0)} álbuns já salvos")
+        except Exception:
+            data = {"categorias": [], "total_albuns": 0, "total_imagens": 0}
 
-print('='*60)
-print('STEP 1: Fetch main albums page')
-main = fetch(BASE + '/albums')
-print(f'Got {len(main)} chars')
+    # === ESTRATÉGIA REAL ===
+    # Não vamos usar categorias do Yupoo (vem em chinês / bagunçado).
+    # Vamos listar TODOS os álbuns e classificar por MARCA via título.
+    print("🔍 Listando TODOS os álbuns da home...")
 
-# Show a snippet of HTML to help debug structure
-snippet = main[5000:5500] if len(main) > 5000 else main[:500]
-print('HTML snippet (5000-5500):')
-print(snippet)
-print()
+    all_albums = []
+    page = 1
+    while True:
+        url = f"{BASE_URL}/albums?page={page}"
+        r = fetch(url)
+        if not r:
+            break
+        soup = BeautifulSoup(r.text, "html.parser")
+        cards = soup.select("a.album__main, a[href*='/albums/']")
+        found = 0
+        for a in cards:
+            href = a.get("href", "")
+            m = re.search(r"/albums/(\d+)", href)
+            if not m:
+                continue
+            aid = m.group(1)
+            if any(x["id"] == aid for x in all_albums):
+                continue
+            title = a.get("title") or a.get_text(strip=True) or ""
+            img = a.select_one("img")
+            cover = ""
+            if img:
+                cover = (img.get("data-origin-src")
+                         or img.get("data-src")
+                         or img.get("src", ""))
+                if cover.startswith("//"):
+                    cover = "https:" + cover
+            all_albums.append({
+                "id": aid,
+                "title": clean_title(title),
+                "url": urljoin(BASE_URL, href.split("?")[0]),
+                "cover_url": cover,
+            })
+            found += 1
+        print(f"  página {page}: +{found} álbuns (total: {len(all_albums)})")
+        if found == 0:
+            break
+        page += 1
+        time.sleep(SLEEP)
+        if page > 100:
+            break
 
-sub_ids = list(dict.fromkeys(re.findall(r'/categories/(\d+)\?isSubCate=true', main)))
-top_ids = list(dict.fromkeys(re.findall(r'/categories/(\d+)"', main)))
-all_ids = list(dict.fromkeys(sub_ids + top_ids))
-print(f'Categories: {len(sub_ids)} sub + {len(top_ids)} top = {len(all_ids)} total')
+    print(f"✅ Total de álbuns encontrados: {len(all_albums)}")
 
-# Also try to parse albums directly from the main page
-print('\nParsing albums from main page directly...')
-main_albums = parse(main, 'Destaque')
-print(f'Found {len(main_albums)} albums on main page')
+    # Classifica por marca
+    brand_buckets: dict[str, list[dict]] = {}
+    for alb in all_albums:
+        brand = detect_brand(alb["title"])
+        brand_buckets.setdefault(brand, []).append(alb)
 
-print('\n' + '='*60)
-print('STEP 2: Scrape each category')
-albums   = []
-seen_ids = set()
+    print(f"🏷 Marcas detectadas: {', '.join(f'{b}({len(v)})' for b,v in brand_buckets.items())}")
 
-# Start with albums found on main page
-for a in main_albums:
-    if a['id'] not in seen_ids:
-        seen_ids.add(a['id'])
-        albums.append(a)
+    # Processa álbum por álbum — baixa imagens, monta data.json
+    # Faz em lotes pra commitar incrementalmente
+    processed_count = 0
+    already_processed_ids = set()
+    for cat in data.get("categorias", []):
+        for alb in cat.get("albuns", []):
+            already_processed_ids.add(alb["id"])
 
-for i, cid in enumerate(all_ids):
-    is_sub = cid in sub_ids
-    url    = BASE + '/categories/' + cid + ('?isSubCate=true' if is_sub else '')
-    print(f'\n[{i+1}/{len(all_ids)}] cat {cid} {"(sub)" if is_sub else ""}')
+    categorias_novas = {}
+    # Começa com as categorias já salvas
+    for cat in data.get("categorias", []):
+        categorias_novas[cat["nome"]] = cat
 
-    try:
-        html = fetch(url)
-        if not html:
-            print('  SKIP: empty response')
-            continue
+    for brand, albums in brand_buckets.items():
+        for alb in albums:
+            if alb["id"] in already_processed_ids:
+                continue
+            print(f"  📦 {brand} / {alb['title'][:60]}")
+            imgs = list_images_in_album(alb)
+            if not imgs:
+                time.sleep(SLEEP)
+                continue
 
-        print(f'  Got {len(html)} chars')
+            brand_slug = slugify(brand)
+            album_dir = OUT_DIR / brand_slug / alb["id"]
+            saved_files = []
+            for i, u in enumerate(imgs):
+                ext = os.path.splitext(urlparse(u).path)[1] or ".jpg"
+                fname = f"{i:03d}{ext}"
+                dest = album_dir / fname
+                if download_image(u, dest):
+                    saved_files.append(f"images/{brand_slug}/{alb['id']}/{fname}")
+                time.sleep(0.05)
 
-        # Show link count for debugging
-        abs_links = len(re.findall(r'href="https://ovosneaker\.x\.yupoo\.com/albums/', html))
-        rel_links = len(re.findall(r'href="/albums/', html))
-        imgs      = len(re.findall(r'photo\.yupoo\.com/ovosneaker/', html))
-        print(f'  abs album links: {abs_links}, rel album links: {rel_links}, images: {imgs}')
+            # Capa
+            cover_local = saved_files[0] if saved_files else ""
 
-        name  = catname(html) or ('Sub' if is_sub else 'Cat') + cid
-        found = [a for a in parse(html, name) if a['id'] not in seen_ids]
-        for a in found: seen_ids.add(a['id'])
-        albums.extend(found)
-        print(f'  -> {len(found)} new | total={len(albums)} | "{name}"')
+            album_entry = {
+                "id": alb["id"],
+                "titulo": alb["title"],
+                "capa": cover_local,
+                "imagens": saved_files,
+            }
+            if brand not in categorias_novas:
+                categorias_novas[brand] = {
+                    "nome": brand,
+                    "slug": slugify(brand),
+                    "albuns": [],
+                }
+            categorias_novas[brand]["albuns"].append(album_entry)
 
-    except Exception as e:
-        print(f'  ERROR: {e}')
-        traceback.print_exc()
+            processed_count += 1
+            if processed_count % BATCH_SIZE == 0:
+                # Salva parcial
+                data["categorias"] = list(categorias_novas.values())
+                data["total_albuns"] = sum(len(c["albuns"]) for c in data["categorias"])
+                data["total_imagens"] = sum(len(a["imagens"]) for c in data["categorias"] for a in c["albuns"])
+                DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+                print(f"💾 Salvo parcial: {data['total_albuns']} álbuns, {data['total_imagens']} imagens")
+            time.sleep(SLEEP)
 
-    time.sleep(0.5)
+    # Salva final
+    data["categorias"] = sorted(
+        list(categorias_novas.values()),
+        key=lambda c: (-len(c["albuns"]), c["nome"])
+    )
+    data["total_albuns"] = sum(len(c["albuns"]) for c in data["categorias"])
+    data["total_imagens"] = sum(len(a["imagens"]) for c in data["categorias"] for a in c["albuns"])
+    DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+    print(f"✅ FINAL: {len(data['categorias'])} categorias, "
+          f"{data['total_albuns']} álbuns, {data['total_imagens']} imagens")
 
-print(f'\n{"="*60}')
-print(f'TOTAL: {len(albums)} albums found')
-
-print('\nSTEP 3: Save catalog.json')
-try:
-    with open('catalog.json','w',encoding='utf-8') as f:
-        json.dump(albums, f, ensure_ascii=False)
-    print(f'Saved {len(albums)} albums')
-except Exception as e:
-    print(f'ERROR: {e}'); traceback.print_exc()
-
-print('\nSTEP 4: Download images')
-ok = fail = 0
-for i, a in enumerate(albums):
-    try:
-        if dl(a['cover']): ok += 1; print(f'[{i+1}/{len(albums)}] OK  {a["cover"]}')
-        else:              fail+=1; print(f'[{i+1}/{len(albums)}] FAIL {a["cover"]}')
-    except Exception as e:
-        fail += 1; print(f'[{i+1}/{len(albums)}] ERR {e}')
-    time.sleep(0.2)
-print(f'Images: {ok} OK, {fail} failed')
-
-print('\nSTEP 5: Generate index.html')
-try:
-    cats = list(dict.fromkeys(a['cat'] for a in albums))
-    pj   = json.dumps(albums, ensure_ascii=False)
-    cj   = json.dumps(cats,   ensure_ascii=False)
-    page = ''.join([
-        '<!DOCTYPE html><html lang="pt-BR"><head>',
-        '<meta charset="UTF-8">',
-        '<meta name="viewport" content="width=device-width,initial-scale=1.0">',
-        '<title>Catalogo</title>',
-        '<link rel="stylesheet" href="style.css">',
-        '</head><body>',
-        '<aside id="sb">',
-        '<div class="logo"><h1>CATALOGO</h1><p>Premium</p></div>',
-        '<div class="srch"><input id="si" placeholder="Buscar..." autocomplete="off"></div>',
-        '<nav id="nav"></nav></aside>',
-        '<main>',
-        '<div class="topbar"><h2 id="ttl">CATALOGO</h2><span id="tsub"></span></div>',
-        '<div class="pc" id="pc"></div>',
-        '<footer><p>CATALOGO DE PRODUTOS</p><p id="yr"></p></footer>',
-        '</main>',
-        '<div id="lb">',
-        '<button id="lbx">&#x2715;</button>',
-        '<div id="lbn"></div>',
-        '<div class="lbw">',
-        '<button class="la" id="lbp">&#8249;</button>',
-        '<img id="lbi" src="" alt="">',
-        '<button class="la" id="lbnx">&#8250;</button>',
-        '</div>',
-        '<div id="lbs"></div><div id="lbt"></div>',
-        '</div>',
-        '<button id="mob">&#9776;</button>',
-        '<script>var P=', pj, ';var C=', cj, ';</script>',
-        '<script src="app.js"></script>',
-        '</body></html>',
-    ])
-    with open('index.html','w',encoding='utf-8') as f:
-        f.write(page)
-    print(f'index.html: {os.path.getsize("index.html")} bytes, {len(albums)} products, {len(cats)} cats')
-except Exception as e:
-    print(f'ERROR: {e}'); traceback.print_exc()
-
-print('\n' + '='*60)
-print('DONE')
+if __name__ == "__main__":
+    main()
