@@ -1,0 +1,28 @@
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Delete images folder and data.json
+        run: |
+          rm -rf images
+          rm -f data.json
+          echo "Limpeza concluida"
+
+      - name: Commit
+        run: |
+          git add -A
+          git commit -m "Clean images folder for full rebuild"
+          git push
