@@ -582,6 +582,124 @@
       ]
     },
     {
+      "nome": "AMIRI",
+      "slug": "amiri",
+      "albuns": [
+        {
+          "id": "189899918",
+          "titulo": "Produto",
+          "capa": "images/amiri/189899918/000.jpg",
+          "imagens": [
+            "images/amiri/189899918/000.jpg",
+            "images/amiri/189899918/001.jpg",
+            "images/amiri/189899918/002.jpg",
+            "images/amiri/189899918/003.jpg",
+            "images/amiri/189899918/004.jpg",
+            "images/amiri/189899918/005.jpg",
+            "images/amiri/189899918/006.jpg",
+            "images/amiri/189899918/007.jpg"
+          ]
+        },
+        {
+          "id": "189899847",
+          "titulo": "Produto",
+          "capa": "images/amiri/189899847/000.jpg",
+          "imagens": [
+            "images/amiri/189899847/000.jpg",
+            "images/amiri/189899847/001.jpg",
+            "images/amiri/189899847/002.jpg",
+            "images/amiri/189899847/003.jpg",
+            "images/amiri/189899847/004.jpg",
+            "images/amiri/189899847/005.jpg",
+            "images/amiri/189899847/006.jpg",
+            "images/amiri/189899847/007.jpg",
+            "images/amiri/189899847/008.jpg",
+            "images/amiri/189899847/009.jpg"
+          ]
+        },
+        {
+          "id": "189899785",
+          "titulo": "Produto",
+          "capa": "images/amiri/189899785/000.jpg",
+          "imagens": [
+            "images/amiri/189899785/000.jpg",
+            "images/amiri/189899785/001.jpg",
+            "images/amiri/189899785/002.jpg",
+            "images/amiri/189899785/003.jpg",
+            "images/amiri/189899785/004.jpg",
+            "images/amiri/189899785/005.jpg",
+            "images/amiri/189899785/006.jpg",
+            "images/amiri/189899785/007.jpg",
+            "images/amiri/189899785/008.jpg"
+          ]
+        },
+        {
+          "id": "189899725",
+          "titulo": "Produto",
+          "capa": "images/amiri/189899725/000.jpg",
+          "imagens": [
+            "images/amiri/189899725/000.jpg",
+            "images/amiri/189899725/001.jpg",
+            "images/amiri/189899725/002.jpg",
+            "images/amiri/189899725/003.jpg",
+            "images/amiri/189899725/004.jpg",
+            "images/amiri/189899725/005.jpg",
+            "images/amiri/189899725/006.jpg",
+            "images/amiri/189899725/007.jpg",
+            "images/amiri/189899725/008.jpg"
+          ]
+        },
+        {
+          "id": "189899666",
+          "titulo": "Produto",
+          "capa": "images/amiri/189899666/000.jpg",
+          "imagens": [
+            "images/amiri/189899666/000.jpg",
+            "images/amiri/189899666/001.jpg",
+            "images/amiri/189899666/002.jpg",
+            "images/amiri/189899666/003.jpg",
+            "images/amiri/189899666/004.jpg",
+            "images/amiri/189899666/005.jpg",
+            "images/amiri/189899666/006.jpg",
+            "images/amiri/189899666/007.jpg",
+            "images/amiri/189899666/008.jpg"
+          ]
+        },
+        {
+          "id": "189899590",
+          "titulo": "Produto",
+          "capa": "images/amiri/189899590/000.jpg",
+          "imagens": [
+            "images/amiri/189899590/000.jpg",
+            "images/amiri/189899590/001.jpg",
+            "images/amiri/189899590/002.jpg",
+            "images/amiri/189899590/003.jpg",
+            "images/amiri/189899590/004.jpg",
+            "images/amiri/189899590/005.jpg",
+            "images/amiri/189899590/006.jpg",
+            "images/amiri/189899590/007.jpg",
+            "images/amiri/189899590/008.jpg"
+          ]
+        },
+        {
+          "id": "189899452",
+          "titulo": "Produto",
+          "capa": "images/amiri/189899452/000.jpg",
+          "imagens": [
+            "images/amiri/189899452/000.jpg",
+            "images/amiri/189899452/001.jpg",
+            "images/amiri/189899452/002.jpg",
+            "images/amiri/189899452/003.jpg",
+            "images/amiri/189899452/004.jpg",
+            "images/amiri/189899452/005.jpg",
+            "images/amiri/189899452/006.jpg",
+            "images/amiri/189899452/007.jpg",
+            "images/amiri/189899452/008.jpg"
+          ]
+        }
+      ]
+    },
+    {
       "nome": "OVO Spreadsheet",
       "slug": "ovo-spreadsheet",
       "albuns": [
@@ -636,6 +754,6 @@
       ]
     }
   ],
-  "total_albuns": 42,
-  "total_imagens": 329
+  "total_albuns": 49,
+  "total_imagens": 392
 }
