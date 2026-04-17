@@ -1,11 +1,14 @@
-name: Build Catalog
-
 on:
   workflow_dispatch:
-  push:
-    paths: ['build.py', 'push_images.py']
-  schedule:
-    - cron: '0 6 * * 0'
+    inputs:
+      mode:
+        description: 'Modo: recategorize (reorganiza imagens já baixadas) ou full (baixa tudo)'
+        required: true
+        default: 'recategorize'
+        type: choice
+        options:
+          - recategorize
+          - full
 
 permissions:
   contents: write
@@ -13,38 +16,40 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      - name: Run catalog builder
-        run: python3 build.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Push index and catalog files
+      - name: Install deps
+        run: pip install requests beautifulsoup4
+
+      - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config http.postBuffer 524288000
-          git add index.html catalog.json style.css app.js || true
-          git diff --cached --quiet || git commit -m "rebuild catalog index [skip ci]"
-          git push
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Push images in batches of 300
+      - name: Run recategorize
+        if: ${{ github.event.inputs.mode == 'recategorize' }}
+        run: python recategorize.py
+
+      - name: Run full build
+        if: ${{ github.event.inputs.mode == 'full' }}
+        env:
+          BATCH_SIZE: 300
+        run: python build.py
+
+      - name: Commit changes
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config http.postBuffer 524288000
-          find images/ -name "*.jpg" 2>/dev/null | sort > /tmp/all_images.txt
-          TOTAL=$(wc -l < /tmp/all_images.txt)
-          echo "Total images to push: $TOTAL"
-          split -l 300 /tmp/all_images.txt /tmp/batch_
-          BATCH=0
-          for f in /tmp/batch_*; do
-            BATCH=$((BATCH+1))
-            echo "=== Batch $BATCH ==="
-            xargs git add < "$f" || true
-            git diff --cached --quiet || git commit -m "images batch $BATCH [skip ci]"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Sem mudanças"
+          else
+            git commit -m "Update catalog (${{ github.event.inputs.mode }})"
             git push
-            sleep 2
-          done
-          echo "Done! $BATCH batches pushed."
+          fi
