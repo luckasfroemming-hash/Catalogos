@@ -36890,60 +36890,6 @@
       ]
     },
     {
-      "nome": "OVO Spreadsheet",
-      "slug": "ovo-spreadsheet",
-      "albuns": [
-        {
-          "id": "176409643",
-          "titulo": "Produto",
-          "capa": "images/ovo-spreadsheet/176409643/000.jpg",
-          "imagens": [
-            "images/ovo-spreadsheet/176409643/000.jpg"
-          ]
-        },
-        {
-          "id": "178652125",
-          "titulo": "Produto",
-          "capa": "images/ovo-spreadsheet/178652125/000.jpg",
-          "imagens": [
-            "images/ovo-spreadsheet/178652125/000.jpg"
-          ]
-        },
-        {
-          "id": "168358463",
-          "titulo": "Produto",
-          "capa": "images/ovo-spreadsheet/168358463/000.jpg",
-          "imagens": [
-            "images/ovo-spreadsheet/168358463/000.jpg"
-          ]
-        },
-        {
-          "id": "168358080",
-          "titulo": "Produto",
-          "capa": "images/ovo-spreadsheet/168358080/000.jpg",
-          "imagens": [
-            "images/ovo-spreadsheet/168358080/000.jpg"
-          ]
-        },
-        {
-          "id": "176409683",
-          "titulo": "Produto",
-          "capa": "images/ovo-spreadsheet/176409683/000.jpg",
-          "imagens": [
-            "images/ovo-spreadsheet/176409683/000.jpg"
-          ]
-        },
-        {
-          "id": "148506428",
-          "titulo": "Produto",
-          "capa": "images/ovo-spreadsheet/148506428/000.jpg",
-          "imagens": [
-            "images/ovo-spreadsheet/148506428/000.jpg"
-          ]
-        }
-      ]
-    },
-    {
       "nome": "Timberland",
       "slug": "timberland",
       "albuns": [
@@ -37239,6 +37185,6 @@
       "albuns": []
     }
   ],
-  "total_albuns": 2439,
-  "total_imagens": 19902
+  "total_albuns": 2433,
+  "total_imagens": 19896
 }
