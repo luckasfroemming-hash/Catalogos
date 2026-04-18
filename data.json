@@ -60589,6 +60589,92 @@
       ]
     },
     {
+      "nome": "Pra da",
+      "slug": "pra-da",
+      "albuns": [
+        {
+          "id": "215038566",
+          "titulo": "Produto",
+          "capa": "images/pra-da/215038566/000.jpg",
+          "imagens": [
+            "images/pra-da/215038566/000.jpg",
+            "images/pra-da/215038566/001.jpg",
+            "images/pra-da/215038566/002.jpg",
+            "images/pra-da/215038566/003.jpg",
+            "images/pra-da/215038566/004.jpg",
+            "images/pra-da/215038566/005.jpg",
+            "images/pra-da/215038566/006.jpg",
+            "images/pra-da/215038566/007.jpg",
+            "images/pra-da/215038566/008.jpg"
+          ]
+        },
+        {
+          "id": "215038564",
+          "titulo": "Produto",
+          "capa": "images/pra-da/215038564/000.jpg",
+          "imagens": [
+            "images/pra-da/215038564/000.jpg",
+            "images/pra-da/215038564/001.jpg",
+            "images/pra-da/215038564/002.jpg",
+            "images/pra-da/215038564/003.jpg",
+            "images/pra-da/215038564/004.jpg",
+            "images/pra-da/215038564/005.jpg",
+            "images/pra-da/215038564/006.jpg",
+            "images/pra-da/215038564/007.jpg",
+            "images/pra-da/215038564/008.jpg"
+          ]
+        },
+        {
+          "id": "215038560",
+          "titulo": "Produto",
+          "capa": "images/pra-da/215038560/000.jpg",
+          "imagens": [
+            "images/pra-da/215038560/000.jpg",
+            "images/pra-da/215038560/001.jpg",
+            "images/pra-da/215038560/002.jpg",
+            "images/pra-da/215038560/003.jpg",
+            "images/pra-da/215038560/004.jpg",
+            "images/pra-da/215038560/005.jpg",
+            "images/pra-da/215038560/006.jpg",
+            "images/pra-da/215038560/007.jpg",
+            "images/pra-da/215038560/008.jpg"
+          ]
+        },
+        {
+          "id": "215038556",
+          "titulo": "Produto",
+          "capa": "images/pra-da/215038556/000.jpg",
+          "imagens": [
+            "images/pra-da/215038556/000.jpg",
+            "images/pra-da/215038556/001.jpg",
+            "images/pra-da/215038556/002.jpg",
+            "images/pra-da/215038556/003.jpg",
+            "images/pra-da/215038556/004.jpg",
+            "images/pra-da/215038556/005.jpg",
+            "images/pra-da/215038556/006.jpg",
+            "images/pra-da/215038556/007.jpg",
+            "images/pra-da/215038556/008.jpg"
+          ]
+        },
+        {
+          "id": "215038550",
+          "titulo": "Produto",
+          "capa": "images/pra-da/215038550/000.jpg",
+          "imagens": [
+            "images/pra-da/215038550/000.jpg",
+            "images/pra-da/215038550/001.jpg",
+            "images/pra-da/215038550/002.jpg",
+            "images/pra-da/215038550/003.jpg",
+            "images/pra-da/215038550/004.jpg",
+            "images/pra-da/215038550/005.jpg",
+            "images/pra-da/215038550/006.jpg",
+            "images/pra-da/215038550/007.jpg",
+            "images/pra-da/215038550/008.jpg"
+          ]
+        }
+      ]
+    },
+    {
       "nome": "Air Jordan 6",
       "slug": "air-jordan-6",
       "albuns": [
@@ -60937,6 +61023,6 @@
       "albuns": []
     }
   ],
-  "total_albuns": 3962,
-  "total_imagens": 32718
+  "total_albuns": 3967,
+  "total_imagens": 32763
 }
